@@ -1,0 +1,25 @@
+<!DOCTYPE>
+<html lang="en">
+<head>
+  <title>MP1</title>
+  <meta charset="utf-8">
+</head>
+
+<script id="shader-f" type="fragment">
+precision mediump float;
+void main() {
+  gl_FragColor = vec4(0.9, 0.29, 0.15, 1.0);
+}
+</script>
+
+<script id="shader-v" type="vertex">
+attribute vec3 aVertexPosition;
+void main() {
+  gl_Position = vec4(aVertexPosition, 1.0);
+}
+</script>
+
+<script src="mp1.js"></script>
+<body onload="startup();">
+  <canvas id="myGLCanvas" width="500" height="500"></canvas>
+</body>
