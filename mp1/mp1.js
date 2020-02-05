@@ -10,6 +10,11 @@ var  vertexPositionBuffer;
 /** @global A simple GLSL shader program */
 var shaderProgram;
 
+var colors = [
+  [0.9, 0.29, 0.15, 1.0], // orange
+  [0.07, 0.16, 0.29, 1.0] // dark blue
+];
+
 /**
  * Creates a context for WebGL
  * @param {element} canvas WebGL canvas
@@ -48,8 +53,8 @@ function setupShaders() {
 
   gl.useProgram(shaderProgram);
   shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-
-  //shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+  // shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+  shaderProgram.vColorUniform = gl.getUniformLocation(shaderProgram, "vColor");
 }
 
 function loadShaderFromDOM(id){
@@ -66,8 +71,8 @@ function loadShaderFromDOM(id){
     cur =cur.nextSibling;
   }
   var shader;
-  if(script.type=="fragment") {shader=gl.createShader(gl.FRAGMENT_SHADER);}
-  else if(script.type=="vertex") {shader=gl.createShader(gl.VERTEX_SHADER);}
+  if(script.type=="x-shader/x-fragment") {shader=gl.createShader(gl.FRAGMENT_SHADER);}
+  else if(script.type=="x-shader/x-vertex") {shader=gl.createShader(gl.VERTEX_SHADER);}
   else {
     console.log("Failed to get type: ", id);
     return null;
@@ -91,26 +96,57 @@ function loadShaderFromDOM(id){
 function setupBuffers() {
   vertexPositionBuffer = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
-  var triangleVertices = [
-    -.75, 1.0, 0.0,
+  var vertexArray = [
+    //small I
+    -.75, .95, 0.0,
     -.75, 0.5, 0.0,
-    .75, 1.0, 0.0,
+    .75, .95, 0.0,
     .75, 0.5, 0.0,
-    -.4, .5, 0,
-    .4, .5, 0,
-    -.4, -.5, 0,
-    .4, -.5, 0,
+    -.35, .5, 0,
+    .35, .5, 0,
+    -.35, -.5, 0,
+    .35, -.5, 0,
     -.75, -.5, 0,
-    -.75, -1, 0,
+    -.75, -.95, 0,
+    .35, -.95, 0,
+    .35, -.5, 0,
+    .75, -.95, 0,
+    .75, -.5, 0,
+    //Big I
+    -.8, 1.0, 0.0,
+    -.8, 0.45, 0.0,
+    .8, 1.0, 0.0,
+    .8, 0.45, 0.0,
+    -.4, .45, 0,
+    .4, .45, 0,
+    -.4, -.45, 0,
+    .4, -.45, 0,
+    -.8, -.45, 0,
+    -.8, -1, 0,
     .4, -1, 0,
-    .4, -.5, 0,
-    .75, -1, 0,
-    .75, -.5, 0
+    .4, -.45, 0,
+    .8, -1, 0,
+    .8, -.45, 0
   ];
 
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(triangleVertices), gl.STATIC_DRAW);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexArray), gl.STATIC_DRAW);
   vertexPositionBuffer.itemSize=3;
-  vertexPositionBuffer.numberOfItems=14;
+  vertexPositionBuffer.numberOfItems=28;
+
+  // var vertexColorBuffer = gl.createBuffer();
+  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
+  // var colors = [];
+  // var i=0;
+  // for(i=0; i<28; i++){
+  //   if(i<14) colors.push(0.9, 0.29, 0.15, 1.0);
+  //   else colors.push(0.07, 0.16, 0.29, 1.0);
+  // }
+  //   // [0.9, 0.29, 0.15, 1.0], // orange
+  //   // [0.07, 0.16, 0.29, 1.0] // dark blue
+  //
+  // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+  // vertexColorBuffer.itemSize = 4;
+  // vertexColorBuffer.numberOfItems = 2;
 }
 
 /**
@@ -124,7 +160,11 @@ function draw(){
   gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
   gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-  gl.drawArrays(gl.TRIANGLE_STRIP, 0, vertexPositionBuffer.numberOfItems);
+  gl.uniform4f(shaderProgram.vColorUniform, colors[1][0], colors[1][1], colors[1][2], colors[1][3]);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 14, 14);
+  gl.uniform4f(shaderProgram.vColorUniform, colors[0][0], colors[0][1], colors[0][2], colors[0][3]);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 14);
+
 }
 
 /**
