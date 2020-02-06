@@ -7,14 +7,12 @@
 
 <script id="shader-v" type="x-shader/x-vertex">
 attribute vec3 aVertexPosition;
-// attribute vec4 aVertexColor;
 
-// For Animation
-// uniform mat4 uModelView;
+uniform mat4 uModelView;
 // uniform mat4 uProjection;
 
 void main() {
-  gl_Position = vec4(aVertexPosition, 1.0);
+  gl_Position = uModelView*vec4(aVertexPosition, 1.0);
 }
 </script>
 

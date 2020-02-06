@@ -10,6 +10,12 @@ var  vertexPositionBuffer;
 /** @global A simple GLSL shader program */
 var shaderProgram;
 
+var frameNumber=0;
+
+var rotationAngle=0;
+
+var modelView = glMatrix.mat4.create();
+
 var colors = [
   [0.9, 0.29, 0.15, 1.0], // orange
   [0.07, 0.16, 0.29, 1.0] // dark blue
@@ -53,8 +59,11 @@ function setupShaders() {
 
   gl.useProgram(shaderProgram);
   shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-  // shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+
   shaderProgram.vColorUniform = gl.getUniformLocation(shaderProgram, "vColor");
+  shaderProgram.modelViewUniform = gl.getUniformLocation(shaderProgram, "uModelView");
+  // shaderProgram.projectionUniform = gl.getUniformLocation(shaderProgram, "uProjection");
 }
 
 function loadShaderFromDOM(id){
@@ -132,21 +141,6 @@ function setupBuffers() {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexArray), gl.STATIC_DRAW);
   vertexPositionBuffer.itemSize=3;
   vertexPositionBuffer.numberOfItems=28;
-
-  // var vertexColorBuffer = gl.createBuffer();
-  // gl.bindBuffer(gl.ARRAY_BUFFER, vertexColorBuffer);
-  // var colors = [];
-  // var i=0;
-  // for(i=0; i<28; i++){
-  //   if(i<14) colors.push(0.9, 0.29, 0.15, 1.0);
-  //   else colors.push(0.07, 0.16, 0.29, 1.0);
-  // }
-  //   // [0.9, 0.29, 0.15, 1.0], // orange
-  //   // [0.07, 0.16, 0.29, 1.0] // dark blue
-  //
-  // gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-  // vertexColorBuffer.itemSize = 4;
-  // vertexColorBuffer.numberOfItems = 2;
 }
 
 /**
@@ -158,13 +152,27 @@ function draw(){
 
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
   gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
+  glMatrix.mat4.identity(modelView);
+  glMatrix.mat4.rotate(modelView,
+              modelView,
+              rotationAngle,
+              [0,0,1]);
+
+  // Set the uniforms
+  gl.uniformMatrix4fv(shaderProgram.modelViewUniform, false, modelView);
+
+  // Draw blue I first
   gl.uniform4f(shaderProgram.vColorUniform, colors[1][0], colors[1][1], colors[1][2], colors[1][3]);
   gl.drawArrays(gl.TRIANGLE_STRIP, 14, 14);
+  // Then the orange I
   gl.uniform4f(shaderProgram.vColorUniform, colors[0][0], colors[0][1], colors[0][2], colors[0][3]);
   gl.drawArrays(gl.TRIANGLE_STRIP, 0, 14);
 
+}
+
+function animate(){
+  rotationAngle+=0.01;
 }
 
 /**
@@ -178,5 +186,13 @@ function draw(){
   setupShaders();
   setupBuffers();
   gl.clearColor(1.0, 1.0, 1.0, 1.0);
+  tick();
+}
+
+function tick(){
+  // console.log("Frame ", frameNumber);
+  frameNumber++;
+  requestAnimationFrame(tick);
   draw();
+  animate();
 }
