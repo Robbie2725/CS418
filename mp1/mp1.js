@@ -14,6 +14,10 @@ var frameNumber=0;
 
 var rotationAngle=0;
 
+var squashScale=0;
+
+var squashRate=-.01;
+
 var modelView = glMatrix.mat4.create();
 
 var colors = [
@@ -138,7 +142,8 @@ function setupBuffers() {
     .8, -.45, 0
   ];
 
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexArray), gl.STATIC_DRAW);
+  scaledArray = vertexArray.map( x => x/1.3 );
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(scaledArray), gl.DYNAMIC_DRAW);
   vertexPositionBuffer.itemSize=3;
   vertexPositionBuffer.numberOfItems=28;
 }
@@ -147,19 +152,29 @@ function setupBuffers() {
  * Draw model (render frame)
  */
 function draw(){
+  setupBuffers();
   gl.viewport(0,0,gl.viewportWidth, gl.viewportHeight);
   gl.clear(gl.COLOR_BUFFER_BIT);
 
   gl.bindBuffer(gl.ARRAY_BUFFER, vertexPositionBuffer);
   gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, vertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+  var affine1 = glMatrix.mat4.create();
+  var affine2 = glMatrix.mat4.create();
 
   glMatrix.mat4.identity(modelView);
-  glMatrix.mat4.rotate(modelView,
-              modelView,
+  //first affine transformation = squashing
+  for(i=0; i<3; i++){
+    affine1[4*i+i]-=squashScale;
+  }
+
+  //then second transformation = rotate
+  glMatrix.mat4.rotate(affine2,
+              affine2,
               rotationAngle,
-              [0,0,1]);
+              [0,1,0]);
 
   // Set the uniforms
+  glMatrix.mat4.multiply(modelView, affine1, affine2);
   gl.uniformMatrix4fv(shaderProgram.modelViewUniform, false, modelView);
 
   // Draw blue I first
@@ -172,7 +187,15 @@ function draw(){
 }
 
 function animate(){
-  rotationAngle+=0.01;
+  rotationAngle+=.04;
+  if(squashScale>.5){
+    squashRate=-.01;
+  }
+  else if(squashScale<0){
+    squashRate=.01;
+  }
+  squashScale+=squashRate;
+
 }
 
 /**
