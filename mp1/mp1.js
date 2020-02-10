@@ -1,3 +1,8 @@
+/**
+ * @file A WebGl program that renders and animates a Block I or two circle gradients rotating
+ * @author Robert Krokos <rkroko2@illinois.edu>
+ */
+
 /** @global The WebGL context */
 var gl;
 
@@ -86,43 +91,10 @@ function createGLContext(canvas) {
 }
 
 /**
- * Setup the fragment and vertex shaders
- */
-function setupShaders() {
-  //Load the vertex and fragment shaders
-  vertexShader =loadShaderFromDOM("shader-v");
-  fragmentShader =loadShaderFromDOM("shader-f");
-
-  //Create the shader program and attach the vertex/fragment shaders
-  shaderProgram = gl.createProgram();
-  gl.attachShader(shaderProgram, vertexShader);
-  gl.attachShader(shaderProgram, fragmentShader);
-  gl.linkProgram(shaderProgram);
-
-  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-    //Alert if shaders not set up properly
-    alert("Failed to setup shaders");
-    console.log("Failed to setup shaders!");
-  }
-
-  // Use the shaderProgram just created
-  gl.useProgram(shaderProgram);
-
-  // Get attributes from shaders and enable arrays that will be needed later
-  shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
-  shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
-  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
-  gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
-
-  // Get the location of model view matrix needed for affine transformations
-  shaderProgram.modelViewUniform = gl.getUniformLocation(shaderProgram, "uModelView");
-}
-
-/**
- * Loads and compiles shader from DOM
- * @param {string} id ID string for shader to load, either a vertex shader or fragment shader
- * @return {WebGLShader} the shader loaded
- */
+* Loads and compiles shader from DOM
+* @param {string} id ID string for shader to load, either a vertex shader or fragment shader
+* @return {WebGLShader} the shader loaded
+*/
 function loadShaderFromDOM(id){
   var script = document.getElementById(id);
   if(!script){
@@ -161,6 +133,39 @@ function loadShaderFromDOM(id){
   }
 
   return shader; // return the compiled shader
+}
+
+/**
+ * Setup the fragment and vertex shaders
+ */
+function setupShaders() {
+  //Load the vertex and fragment shaders
+  vertexShader =loadShaderFromDOM("shader-v");
+  fragmentShader =loadShaderFromDOM("shader-f");
+
+  //Create the shader program and attach the vertex/fragment shaders
+  shaderProgram = gl.createProgram();
+  gl.attachShader(shaderProgram, vertexShader);
+  gl.attachShader(shaderProgram, fragmentShader);
+  gl.linkProgram(shaderProgram);
+
+  if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    //Alert if shaders not set up properly
+    alert("Failed to setup shaders");
+    console.log("Failed to setup shaders!");
+  }
+
+  // Use the shaderProgram just created
+  gl.useProgram(shaderProgram);
+
+  // Get attributes from shaders and enable arrays that will be needed later
+  shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+  shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+  gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
+  gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
+
+  // Get the location of model view matrix needed for affine transformations
+  shaderProgram.modelViewUniform = gl.getUniformLocation(shaderProgram, "uModelView");
 }
 
 /**
@@ -324,59 +329,6 @@ function animate(){
 
   // Call setupBuffers to update the vertices locations of the block I  (for up/down animation)
   setupBuffers();
-}
-
-/**
- * Startup function called from html code to start program.
- */
- function startup() {
-  console.log("Startup Function Called");
-
-  // get canvas to render model on
-  canvas = document.getElementById("myGLCanvas");
-
-  // create context
-  gl = createGLContext(canvas);
-
-  // Setup the shaders and buffers
-  setupShaders();
-  setupBuffers(); // BlockI buffers
-  setupCustomBuffers(); // Custom model buffers
-
-  // Set the clear color to white
-  gl.clearColor(1.0, 1.0, 1.0, 1.0);
-
-  // Call tick function, which will then be called every subsequent animation frame
-  tick();
-}
-
-/**
- * Called every animation frame. Depending radio button value, either makes call
- * to render BlockI or Custom Model
- */
-function tick(){
-  // Track frame number
-  console.log("Frame ", frameNumber);
-  frameNumber++;
-
-  // Tell browser to call tick function before next repaint
-  requestAnimationFrame(tick);
-  if(document.getElementById('btn1').checked){
-    // Draw and animate block I if block I button selected
-    draw();
-    animate();
-  }
-  else if(document.getElementById('btn2').checked){
-    // Draw and animate custom model if custom button selected
-    draw_custom();
-    animate_custom();
-  }
-  else{
-    // If neither selected, just draw and animate the block I
-    //Should never reach this, but here just in case button doesn't work
-    draw();
-    animate();
-  }
 }
 
 /**
@@ -563,5 +515,58 @@ function animate_custom(){
     oldAngle=temp;
     // Flip the switch flag to now rotate around x
     switchFlag=0;
+  }
+}
+
+/**
+* Startup function called from html code to start program.
+*/
+function startup() {
+  console.log("Startup Function Called");
+
+  // get canvas to render model on
+  canvas = document.getElementById("myGLCanvas");
+
+  // create context
+  gl = createGLContext(canvas);
+
+  // Setup the shaders and buffers
+  setupShaders();
+  setupBuffers(); // BlockI buffers
+  setupCustomBuffers(); // Custom model buffers
+
+  // Set the clear color to white
+  gl.clearColor(1.0, 1.0, 1.0, 1.0);
+
+  // Call tick function, which will then be called every subsequent animation frame
+  tick();
+}
+
+/**
+* Called every animation frame. Depending radio button value, either makes call
+* to render BlockI or Custom Model
+*/
+function tick(){
+  // Track frame number
+  console.log("Frame ", frameNumber);
+  frameNumber++;
+
+  // Tell browser to call tick function before next repaint
+  requestAnimationFrame(tick);
+  if(document.getElementById('btn1').checked){
+    // Draw and animate block I if block I button selected
+    draw();
+    animate();
+  }
+  else if(document.getElementById('btn2').checked){
+    // Draw and animate custom model if custom button selected
+    draw_custom();
+    animate_custom();
+  }
+  else{
+    // If neither selected, just draw and animate the block I
+    //Should never reach this, but here just in case button doesn't work
+    draw();
+    animate();
   }
 }
