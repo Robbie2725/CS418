@@ -6,26 +6,30 @@
 </head>
 
 <script id="shader-v" type="x-shader/x-vertex">
-attribute vec3 aVertexPosition;
+  attribute vec4 aVertexColor;
+  attribute vec3 aVertexPosition;
 
-uniform mat4 uModelView;
-// uniform mat4 uProjection;
-
+  uniform mat4 uModelView;
+  varying vec4 vColor;
 void main() {
   gl_Position = uModelView*vec4(aVertexPosition, 1.0);
+  vColor = aVertexColor;
 }
 </script>
 
 <script id="shader-f" type="x-shader/x-fragment">
 precision mediump float;
-uniform vec4 vColor;
+varying vec4 vColor;
 void main() {
   gl_FragColor = vColor;
 }
 </script>
 
+
 <script src="gl-matrix-min.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
+<input type="radio" name="animation" id="btn1" value="blockI" checked="checked">Block I<br>
+<input type="radio" name="animation" id="btn2"value="custom">Custom Animation<br>
 <script src="mp1.js"></script>
 <body onload="startup();">
   <canvas id="myGLCanvas" width="500" height="500"></canvas>
