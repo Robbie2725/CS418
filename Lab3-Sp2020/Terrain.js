@@ -4,7 +4,7 @@
  */
 
 /** Class implementing 3D terrain. */
-class Terrain{   
+class Terrain{
 /**
  * Initialize members of a Terrain object
  * @param {number} div Number of triangles along x axis and y axis
@@ -19,7 +19,7 @@ class Terrain{
         this.minY=minY;
         this.maxX=maxX;
         this.maxY=maxY;
-        
+
         // Allocate vertex array
         this.vBuffer = [];
         // Allocate triangle array
@@ -29,20 +29,20 @@ class Terrain{
         // Allocate array for edges so we can draw wireframe
         this.eBuffer = [];
         console.log("Terrain: Allocated buffers");
-        
+
         this.generateTriangles();
         console.log("Terrain: Generated triangles");
-        
+
         this.generateLines();
         console.log("Terrain: Generated lines");
-        
+
         // Get extension for 4 byte integer indices for drwElements
         var ext = gl.getExtension('OES_element_index_uint');
         if (ext ==null){
             alert("OES_element_index_uint is unsupported by your browser and terrain generation cannot proceed.");
         }
     }
-    
+
     /**
     * Set the x,y,z coords of a vertex at location(i,j)
     * @param {Object} v an an array of length 3 holding x,y,z coordinates
@@ -52,8 +52,12 @@ class Terrain{
     setVertex(v,i,j)
     {
         //Your code here
+        var idx = 3*(i(this.div+1)+j);
+        this.vBuffer[idx]=v[0];
+        this.vBuffer[idx+1]=v[1];
+        this.vBuffer[idx+2]=v[2];
     }
-    
+
     /**
     * Return the x,y,z coordinates of a vertex at location (i,j)
     * @param {Object} v an an array of length 3 holding x,y,z coordinates
@@ -63,21 +67,25 @@ class Terrain{
     getVertex(v,i,j)
     {
         //Your code here
+        var idx = 3*(i(this.div+1)+j);
+        v[0]=this.vBuffer[idx];
+        v[1]=this.vBuffer[idx+1];
+        v[2]=this.vBuffer[idx+2];
     }
-    
+
     /**
-    * Send the buffer objects to WebGL for rendering 
+    * Send the buffer objects to WebGL for rendering
     */
     loadBuffers()
     {
         // Specify the vertex coordinates
         this.VertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexPositionBuffer);      
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexPositionBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vBuffer), gl.STATIC_DRAW);
         this.VertexPositionBuffer.itemSize = 3;
         this.VertexPositionBuffer.numItems = this.numVertices;
         console.log("Loaded ", this.VertexPositionBuffer.numItems, " vertices");
-    
+
         // Specify normals to be able to do lighting calculations
         this.VertexNormalBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexNormalBuffer);
@@ -86,8 +94,8 @@ class Terrain{
         this.VertexNormalBuffer.itemSize = 3;
         this.VertexNormalBuffer.numItems = this.numVertices;
         console.log("Loaded ", this.VertexNormalBuffer.numItems, " normals");
-    
-        // Specify faces of the terrain 
+
+        // Specify faces of the terrain
         this.IndexTriBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.IndexTriBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(this.fBuffer),
@@ -95,64 +103,91 @@ class Terrain{
         this.IndexTriBuffer.itemSize = 1;
         this.IndexTriBuffer.numItems = this.fBuffer.length;
         console.log("Loaded ", this.IndexTriBuffer.numItems, " triangles");
-    
-        //Setup Edges  
+
+        //Setup Edges
         this.IndexEdgeBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.IndexEdgeBuffer);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint32Array(this.eBuffer),
                   gl.STATIC_DRAW);
         this.IndexEdgeBuffer.itemSize = 1;
         this.IndexEdgeBuffer.numItems = this.eBuffer.length;
-        
+
         console.log("triangulatedPlane: loadBuffers");
     }
-    
+
     /**
-    * Render the triangles 
+    * Render the triangles
     */
     drawTriangles(){
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.VertexPositionBuffer.itemSize, 
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.VertexPositionBuffer.itemSize,
                          gl.FLOAT, false, 0, 0);
 
         // Bind normal buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexNormalBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, 
+        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute,
                            this.VertexNormalBuffer.itemSize,
-                           gl.FLOAT, false, 0, 0);   
-    
-        //Draw 
+                           gl.FLOAT, false, 0, 0);
+
+        //Draw
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.IndexTriBuffer);
         gl.drawElements(gl.TRIANGLES, this.IndexTriBuffer.numItems, gl.UNSIGNED_INT,0);
     }
-    
+
     /**
-    * Render the triangle edges wireframe style 
+    * Render the triangle edges wireframe style
     */
     drawEdges(){
-    
+
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.VertexPositionBuffer.itemSize, 
+        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.VertexPositionBuffer.itemSize,
                          gl.FLOAT, false, 0, 0);
 
         // Bind normal buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexNormalBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, 
+        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute,
                            this.VertexNormalBuffer.itemSize,
-                           gl.FLOAT, false, 0, 0);   
-    
-        //Draw 
+                           gl.FLOAT, false, 0, 0);
+
+        //Draw
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.IndexEdgeBuffer);
-        gl.drawElements(gl.LINES, this.IndexEdgeBuffer.numItems, gl.UNSIGNED_INT,0);   
+        gl.drawElements(gl.LINES, this.IndexEdgeBuffer.numItems, gl.UNSIGNED_INT,0);
     }
 /**
- * Fill the vertex and buffer arrays 
- */    
+ * Fill the vertex and buffer arrays
+ */
 generateTriangles()
 {
     //Your code here
-    
-    
+    var dx=(this.maxX-this.minX)/this.div;
+    var dy=(this.maxY-this.minY)/this.div;
+
+    for(var i=0; i<=this.div; i++){
+      for(var j=0; j<=this.div; j++){
+        this.vBuffer.push(this.minX+dx*j);
+        this.vBuffer.push(this.minY+dy*i);
+        this.vBuffer.push(0);
+
+        this.nBuffer.push(0);
+        this.nBuffer.push(0);
+        this.nBuffer.push(1);
+
+      }
+    }
+
+    for(var i=0; i<this.div; i++){
+      for(var j=0; j<this.div; j++){
+        var idx=i*(this.div+1)+j;
+        this.fBuffer.push(idx);
+        this.fBuffer.push(idx+1);
+        this.fBuffer.push(idx+this.div+1);
+
+        this.fBuffer.push(idx+1);
+        this.fBuffer.push(idx+1+this.div+1);
+        this.fBuffer.push(idx+this.div+1);
+
+      }
+    }
     //
     this.numVertices = this.vBuffer.length/3;
     this.numFaces = this.fBuffer.length/3;
@@ -163,23 +198,23 @@ generateTriangles()
  */
 printBuffers()
     {
-        
+
     for(var i=0;i<this.numVertices;i++)
           {
-           console.log("v ", this.vBuffer[i*3], " ", 
+           console.log("v ", this.vBuffer[i*3], " ",
                              this.vBuffer[i*3 + 1], " ",
                              this.vBuffer[i*3 + 2], " ");
-                       
+
           }
-    
+
       for(var i=0;i<this.numFaces;i++)
           {
-           console.log("f ", this.fBuffer[i*3], " ", 
+           console.log("f ", this.fBuffer[i*3], " ",
                              this.fBuffer[i*3 + 1], " ",
                              this.fBuffer[i*3 + 2], " ");
-                       
+
           }
-        
+
     }
 
 /**
@@ -194,14 +229,14 @@ generateLines()
         var fid=f*3;
         this.eBuffer.push(this.fBuffer[fid]);
         this.eBuffer.push(this.fBuffer[fid+1]);
-        
+
         this.eBuffer.push(this.fBuffer[fid+1]);
         this.eBuffer.push(this.fBuffer[fid+2]);
-        
+
         this.eBuffer.push(this.fBuffer[fid+2]);
         this.eBuffer.push(this.fBuffer[fid]);
     }
-    
+
 }
-    
+
 }
