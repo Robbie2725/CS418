@@ -82,6 +82,19 @@ function degToRad(degrees) {
 }
 
 /**
+* Computes AxB and places in P
+* @param {Object} P an array of length 3 that will be AxB
+* @param {Object} A an array of length 3 holding x,y,z coords
+* @param {Object} B an array of length 3 holding x,y,z coords
+*/
+function cross_prod(P, A, B){
+  P[0] = A[1]*B[2]-A[2]*B[1];
+  P[1] = A[2]*B[0]-A[0]*B[2];
+  P[2] = A[0]*B[1]-A[1]*B[0];
+}
+
+
+/**
  * Creates a context for WebGL
  * @param {element} canvas WebGL canvas
  * @return {Object} WebGL context
@@ -297,7 +310,7 @@ function draw() {
   setMatrixUniforms();
   setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
   setMaterialUniforms(shininess,kAmbient,kEdgeWhite,kSpecular);
-  myTerrain.drawEdges();
+  myTerrain.drawTriangles();
   mvPop();
 
 
@@ -307,7 +320,7 @@ function draw() {
  * Populate buffers with data
  */
 function setupBuffers() {
-    myTerrain = new Terrain(10,-0.5,0.5,-0.5,0.5);
+    myTerrain = new Terrain(100,-0.75,0.75,-0.75,0.75);
     myTerrain.loadBuffers();
 }
 

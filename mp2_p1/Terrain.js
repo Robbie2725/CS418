@@ -35,7 +35,8 @@ class Terrain{
 
         this.generateTriangles();
         console.log("Terrain: Generated triangles");
-        this.randomTerrain();
+        this.randomTerrain(); // make the terrain not flat
+        this.setVertexNormals(); // update the vertex normals of the new terrain
 
         this.generateLines();
         console.log("Terrain: Generated lines");
@@ -174,7 +175,7 @@ generateTriangles()
 
         this.nBuffer.push(0);
         this.nBuffer.push(0);
-        this.nBuffer.push(1);
+        this.nBuffer.push(0);
 
       }
     }
@@ -244,34 +245,112 @@ generateLines()
 }
 
 generatePlane(){
-  this.p = [Math.random()*(this.maxX-this.minX), Math.random()*(this.maxY-this.minY), 0];
-  // console.log("Generated p: ", this.p);
-  this.n = [Math.random()*(this.maxX-this.minX), Math.random()*(this.maxY-this.minY), 0];
-  // console.log("Generated n: ", this.n);
+  // random point
+  this.p = [Math.random()*(this.maxX-this.minX)+this.minX, Math.random()*(this.maxY-this.minY)+this.minY, 0];
+
+  //random unit vector for the normal vector
+  var normal = [Math.random()-.5, Math.random()-.5, 0];
+  var magnitude = Math.sqrt(normal[0]*normal[0] + normal[1]*normal[1]);
+  this.n = [normal[0]/magnitude, normal[1]/magnitude, 0];
 }
 
 randomTerrain(){
-  var delta=.005;
+  var delta=.0075;
+  var add=0;
+  var sub=0;
   for(var i=0; i<100; i++){
     this.generatePlane();
-    // console.log("Random point: ", this.p);
-    // console.log("Normal vector to plane: ", this.n);
     for(var x=0; x<=this.div; x++){
       for(var y=0; y<=this.div; y++){
         var vtx = [0,0,0];
         this.getVertex(vtx, x, y);
-        // console.log("Vertex: ", vtx);
         var v_p = [vtx[0]-this.p[0], vtx[1]-this.p[1], vtx[2]-this.p[2]] ;
-        // console.log("V_p is ", v_p);
         var result=0;
         for (var j = 0; j < 3; j++) {
           result += v_p[j] * this.n[j];
         }
         // console.log(result);
-        if(result>0) vtx[2]+=delta;
-        else vtx[2]-=delta;
+        if(result>0) {
+          vtx[2]+=delta;
+          add++;
+        }
+        else {
+          vtx[2]-=delta;
+          sub++;
+        }
         this.setVertex(vtx, x, y);
       }
+    }
+  }
+  // console.log("Added Delta: ", add);
+  // console.log("Subtracted Delta: ", sub);
+}
+
+setVertexNormals(){
+  for(var i=0; i<this.div; i++){
+    for(var j=0; j<this.div; j++){
+      // vars used to get each traingles vertices
+      var v1 = [0,0,0];
+      var v2 = [0,0,0];
+      var v3 = [0,0,0];
+      // var used to compute the cross product
+      var prod=[0,0,0];
+
+      // get uppper triangles vertices
+      this.getVertex(v1, i, j);
+      this.getVertex(v2, i+1, j+1);
+      this.getVertex(v3, i+1, j);
+      cross_prod(prod, [v2[0]-v1[0], v2[1]-v1[1], v2[2]-v1[2]], [v3[0]-v1[0], v3[1]-v1[1], v3[2]-v1[2]]);
+      // console.log(prod);
+
+      // get index of each vertex in nBuffer
+      var idx1 = 3*(i*(this.div+1)+j);
+      var idx2 = 3*((i+1)*(this.div+1)+(j+1));
+      var idx3 = 3*((i+1)*(this.div+1)+j);
+
+      // store N in the nbuffer for each vertex
+      this.nBuffer[idx1]+=prod[0];
+      this.nBuffer[idx1+1]+=prod[1];
+      this.nBuffer[idx1+2]+=prod[2];
+      this.nBuffer[idx2]+=prod[0];
+      this.nBuffer[idx2+1]+=prod[1];
+      this.nBuffer[idx2+2]+=prod[2];
+      this.nBuffer[idx3]+=prod[0];
+      this.nBuffer[idx3+1]+=prod[1];
+      this.nBuffer[idx3+2]+=prod[2];
+
+      //Do the same for other triangle of the 'square'
+      this.getVertex(v1, i, j);
+      this.getVertex(v2, i, j+1);
+      this.getVertex(v3, i+1, j+1);
+      cross_prod(prod, [v2[0]-v1[0], v2[1]-v1[1], v2[2]-v1[2]], [v3[0]-v1[0], v3[1]-v1[1], v3[2]-v1[2]]);
+      // console.log(prod);
+
+      // get index of each vertex in nBuffer
+      var idx1 = 3*(i*(this.div+1)+j);
+      var idx2 = 3*(i*(this.div+1)+(j+1));
+      var idx3 = 3*((i+1)*(this.div+1)+j+1);
+
+      // store N in the nbuffer for each vertex
+      this.nBuffer[idx1]+=prod[0];
+      this.nBuffer[idx1+1]+=prod[1];
+      this.nBuffer[idx1+2]+=prod[2];
+      this.nBuffer[idx2]+=prod[0];
+      this.nBuffer[idx2+1]+=prod[1];
+      this.nBuffer[idx2+2]+=prod[2];
+      this.nBuffer[idx3]+=prod[0];
+      this.nBuffer[idx3+1]+=prod[1];
+      this.nBuffer[idx3+2]+=prod[2];
+    }
+  }
+
+  for(var x=0; x<=this.div; x++){
+    for(var y=0; y<=this.div; y++){
+      var idx = 3*(x*(this.div+1)+y);
+      var magnitude = Math.sqrt(this.nBuffer[idx]*this.nBuffer[idx]+this.nBuffer[idx+1]*this.nBuffer[idx+1]+this.nBuffer[idx+2]*this.nBuffer[idx+2]);
+      this.nBuffer[idx]=this.nBuffer[idx]/magnitude;
+      this.nBuffer[idx+1]=this.nBuffer[idx+1]/magnitude;
+      this.nBuffer[idx+2]=this.nBuffer[idx+2]/magnitude;
     }
   }
 }
