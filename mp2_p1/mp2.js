@@ -25,7 +25,7 @@ var nMatrix = mat3.create();
 var mvMatrixStack = [];
 
 /** @global The angle of rotation around the y axis */
-var viewRot = 10;
+var viewRot = 0;
 
 /** @global A glmatrix vector to use for transformations */
 var transformVec = vec3.create();
@@ -39,9 +39,9 @@ var myTerrain;
 
 // View parameters
 /** @global Location of the camera in world coordinates */
-var eyePt = vec3.fromValues(0.0,0.0,0.0);
+var eyePt = vec3.fromValues(0.0,-.2,0.0);
 /** @global Direction of the view in world coordinates */
-var viewDir = vec3.fromValues(0.0,0.0,-1.0);
+var viewDir = vec3.fromValues(0.0,0,-1);
 /** @global Up vector for view matrix creation, in world coordinates */
 var up = vec3.fromValues(0.0,1.0,0.0);
 /** @global Location of a point along viewDir in world coordinates */
@@ -61,11 +61,14 @@ var lSpecular =[0,0,0];
 /** @global Ambient material color/intensity for Phong reflection */
 var kAmbient = [1.0,1.0,1.0];
 /** @global Diffuse material color/intensity for Phong reflection */
-var kTerrainDiffuse = [205.0/255.0,163.0/255.0,63.0/255.0];
+var kTerrainDiffuse = [[52/255, 152/255, 235/255], //blue
+                        [101/255, 235/255, 52/255], //green
+                        [176/255, 134/255, 7/255], //brown
+                        [1, 1, 1]]; //white
 /** @global Specular material color/intensity for Phong reflection */
 var kSpecular = [0.0,0.0,0.0];
 /** @global Shininess exponent for Phong reflection */
-var shininess = 23;
+var shininess = 100;
 /** @global Edge color fpr wireframeish rendering */
 var kEdgeBlack = [0.0,0.0,0.0];
 /** @global Edge color for wireframe rendering */
@@ -168,7 +171,10 @@ function uploadMVMatrix(){
 function setMaterialUniforms(alpha,a,d,s) {
   gl.uniform1f(shaderProgram.uniformShininessLoc, alpha);
   gl.uniform3fv(shaderProgram.uniformAmbientMaterialColorLoc, a);
-  gl.uniform3fv(shaderProgram.uniformDiffuseMaterialColorLoc, d);
+  gl.uniform3fv(shaderProgram.uniformDiffuseColorLoc1, d[3]);
+  gl.uniform3fv(shaderProgram.uniformDiffuseColorLoc2, d[2]);
+  gl.uniform3fv(shaderProgram.uniformDiffuseColorLoc3, d[1]);
+  gl.uniform3fv(shaderProgram.uniformDiffuseColorLoc4, d[0]);
   gl.uniform3fv(shaderProgram.uniformSpecularMaterialColorLoc, s);
 }
 
@@ -280,7 +286,10 @@ function setupShaders() {
   shaderProgram.uniformSpecularLightColorLoc = gl.getUniformLocation(shaderProgram, "uSpecularLightColor");
   shaderProgram.uniformShininessLoc = gl.getUniformLocation(shaderProgram, "uShininess");
   shaderProgram.uniformAmbientMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKAmbient");
-  shaderProgram.uniformDiffuseMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKDiffuse");
+  shaderProgram.uniformDiffuseColorLoc1 = gl.getUniformLocation(shaderProgram, "kDiffuse1");
+  shaderProgram.uniformDiffuseColorLoc2 = gl.getUniformLocation(shaderProgram, "kDiffuse2");
+  shaderProgram.uniformDiffuseColorLoc3 = gl.getUniformLocation(shaderProgram, "kDiffuse3");
+  shaderProgram.uniformDiffuseColorLoc4 = gl.getUniformLocation(shaderProgram, "kDiffuse4");
   shaderProgram.uniformSpecularMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKSpecular");
 
 }
@@ -309,7 +318,7 @@ function draw() {
   mat4.rotateX(mvMatrix, mvMatrix, degToRad(-75));
   setMatrixUniforms();
   setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
-  setMaterialUniforms(shininess,kAmbient,kEdgeWhite,kSpecular);
+  setMaterialUniforms(shininess,kAmbient,kTerrainDiffuse,kSpecular);
   myTerrain.drawTriangles();
   mvPop();
 
@@ -320,7 +329,7 @@ function draw() {
  * Populate buffers with data
  */
 function setupBuffers() {
-    myTerrain = new Terrain(100,-0.75,0.75,-0.75,0.75);
+    myTerrain = new Terrain(100,-1,1,-1,1);
     myTerrain.loadBuffers();
 }
 

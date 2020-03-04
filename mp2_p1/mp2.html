@@ -13,17 +13,27 @@ uniform mat4 uMVMatrix;
 uniform mat4 uPMatrix;
 uniform mat3 uNMatrix;
 
+uniform vec3 kDiffuse1;
+uniform vec3 kDiffuse2;
+uniform vec3 kDiffuse3;
+uniform vec3 kDiffuse4;
+
 varying vec3 fragNormal;
 varying vec3 vPositionEye;
+varying vec3 diffuseColorInterpolated;
 
 void main(void) {
-
 
   // Get the vertex position in eye coordinates
   vec4 vertexPositionEye4 = uMVMatrix * vec4(aVertexPosition, 1.0);
   vPositionEye = vertexPositionEye4.xyz / vertexPositionEye4.w;
 
   fragNormal = uNMatrix*aVertexNormal;
+
+  if(aVertexPosition[2] > .05) diffuseColorInterpolated = kDiffuse1;
+  else if(aVertexPosition[2] > 0.0 ) diffuseColorInterpolated = kDiffuse2;
+  else if(aVertexPosition[2] > -.05) diffuseColorInterpolated = kDiffuse3;
+  else diffuseColorInterpolated = kDiffuse4;
 
   gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
 }
@@ -33,17 +43,17 @@ void main(void) {
 precision mediump float;
 
 uniform vec3 uLightPosition;
-uniform vec3 uAmbientLightColor;
 uniform vec3 uDiffuseLightColor;
+uniform vec3 uAmbientLightColor;
 uniform vec3 uSpecularLightColor;
 
 uniform vec3 uKAmbient;
-uniform vec3 uKDiffuse;
-uniform vec3 uKSpecular;
 uniform float uShininess;
+uniform vec3 uKSpecular;
 
 varying vec3 vPositionEye;
 varying vec3 fragNormal;
+varying vec3 diffuseColorInterpolated;
 
 void main(void) {
     vec3 normalVector = normalize(fragNormal);
@@ -53,13 +63,13 @@ void main(void) {
 
     float LdotN = max(dot(lightVector, normalVector), 0.0); // Diffuse lighting weight
 
-    vec3 diffuseTerm = uKDiffuse*uDiffuseLightColor; // calculate the diffuse term
+    vec3 diffuseTerm = diffuseColorInterpolated*uDiffuseLightColor; // calculate the diffuse term
 
     //Now need to calculate the specular term
     vec3 viewVector = normalize(-vPositionEye); // get the view vector
     vec3 halfwayVector = normalize(viewVector+lightVector);
     float HdotN = max(dot(halfwayVector, normalVector), 0.0);
-    float specWeight = pow(HdotN, uShininess);
+    float specWeight = pow(HdotN, uShininess*100.0);
 
     gl_FragColor = vec4(ka_ia+(LdotN*diffuseTerm)+(HdotN*specWeight), 1);
 }
