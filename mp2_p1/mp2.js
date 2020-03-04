@@ -231,7 +231,7 @@ function loadShaderFromDOM(id){
 
   if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
     // If not compiled successfully, alert and return null
-    alert(gl.getShaderInfoLog(shader));
+    console.log(gl.getShaderInfoLog(shader));
     console.log(source);
     console.log("Failed to load shader!");
     return null;
@@ -257,7 +257,7 @@ function setupShaders() {
   if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
     //Alert if shaders not set up properly
     alert("Failed to setup shaders");
-    console.log("Failed to setup shaders!");
+    console.log(gl.getProgramInfoLog(shaderProgram));
   }
 
   // Use the shaderProgram just created
