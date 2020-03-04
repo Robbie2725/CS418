@@ -21,7 +21,8 @@ class Terrain{
         this.maxY=maxY;
 
         // Allocate point to generate random plane
-        this.p = vec3.create();
+        this.p = [0, 0, 0];
+        this.n = [0, 0, 0];
         // Allocate vertex array
         this.vBuffer = [];
         // Allocate triangle array
@@ -55,7 +56,7 @@ class Terrain{
     setVertex(v,i,j)
     {
         //Your code here
-        var idx = 3*(i(this.div+1)+j);
+        var idx = 3*(i*(this.div+1)+j);
         this.vBuffer[idx]=v[0];
         this.vBuffer[idx+1]=v[1];
         this.vBuffer[idx+2]=v[2];
@@ -243,23 +244,30 @@ generateLines()
 }
 
 generatePlane(){
-  this.p = [Math.random()*(this.div+1), Math.random()*(this.div+1), 0];
-  this.n = [Math.random()*(this.div+1), Math.random()*(this.div+1), 0];
+  this.p = [Math.random()*(this.maxX-this.minX), Math.random()*(this.maxY-this.minY), 0];
+  // console.log("Generated p: ", this.p);
+  this.n = [Math.random()*(this.maxX-this.minX), Math.random()*(this.maxY-this.minY), 0];
+  // console.log("Generated n: ", this.n);
 }
 
 randomTerrain(){
   var delta=.005;
   for(var i=0; i<100; i++){
     this.generatePlane();
+    // console.log("Random point: ", this.p);
+    // console.log("Normal vector to plane: ", this.n);
     for(var x=0; x<=this.div; x++){
       for(var y=0; y<=this.div; y++){
         var vtx = [0,0,0];
         this.getVertex(vtx, x, y);
-        var v_p = vtx-this.p;
+        // console.log("Vertex: ", vtx);
+        var v_p = [vtx[0]-this.p[0], vtx[1]-this.p[1], vtx[2]-this.p[2]] ;
+        // console.log("V_p is ", v_p);
         var result=0;
-        for (var j = 0; j < 3; i++) {
+        for (var j = 0; j < 3; j++) {
           result += v_p[j] * this.n[j];
         }
+        // console.log(result);
         if(result>0) vtx[2]+=delta;
         else vtx[2]-=delta;
         this.setVertex(vtx, x, y);
