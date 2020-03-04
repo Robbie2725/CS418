@@ -39,7 +39,7 @@ var myTerrain;
 
 // View parameters
 /** @global Location of the camera in world coordinates */
-var eyePt = vec3.fromValues(0.0,-.2,0.0);
+var eyePt = vec3.fromValues(0,0,-0);
 /** @global Direction of the view in world coordinates */
 var viewDir = vec3.fromValues(0.0,0,-1);
 /** @global Up vector for view matrix creation, in world coordinates */
@@ -60,7 +60,7 @@ var lSpecular =[0,0,0];
 //Material parameters
 /** @global Ambient material color/intensity for Phong reflection */
 var kAmbient = [1.0,1.0,1.0];
-/** @global Diffuse material color/intensity for Phong reflection */
+/** @global Array of diffuse material color/intensity for Phong reflection */
 var kTerrainDiffuse = [[52/255, 152/255, 235/255], //blue
                         [101/255, 235/255, 52/255], //green
                         [176/255, 134/255, 7/255], //brown
@@ -165,7 +165,7 @@ function uploadMVMatrix(){
  * Sends material information to the shader
  * @param {Float32} alpha shininess coefficient
  * @param {Float32Array} a Ambient material color
- * @param {Float32Array} d Diffuse material color
+ * @param {Float32Array} d Array of 4 diffuse material colors
  * @param {Float32Array} s Specular material color
  */
 function setMaterialUniforms(alpha,a,d,s) {
@@ -193,7 +193,7 @@ function setLightUniforms(loc,a,d,s) {
 }
 
 /**
- * Sends projection/modelview matrices to shader
+ * Sends projection/modelview/normal matrices to shader
  */
 function setMatrixUniforms() {
   uploadMVMatrix();
@@ -311,15 +311,26 @@ function draw() {
   // Then generate the lookat matrix and initialize the MV matrix to that view
   mat4.lookAt(mvMatrix,eyePt,viewPt,up);
 
+  //push current modelview matrix to stack
   mvPush();
+
+  // generate transformation
   vec3.set(transformVec,0.0,-0.25,-2.0);
+  //add transformation to modelview
   mat4.translate(mvMatrix, mvMatrix,transformVec);
+  // rotate modelview around y
   mat4.rotateY(mvMatrix, mvMatrix, degToRad(viewRot));
-  mat4.rotateX(mvMatrix, mvMatrix, degToRad(-75));
+  // rotate around x
+  mat4.rotateX(mvMatrix, mvMatrix, degToRad(-65));
+  // Update the matrix uniforms to hold calculations just performed
   setMatrixUniforms();
+  // Send the lighting information to shaders
   setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
+  // send material information to shaders
   setMaterialUniforms(shininess,kAmbient,kTerrainDiffuse,kSpecular);
+  // draw the terrain
   myTerrain.drawTriangles();
+  // Pop modelview from stack
   mvPop();
 
 
@@ -329,7 +340,7 @@ function draw() {
  * Populate buffers with data
  */
 function setupBuffers() {
-    myTerrain = new Terrain(100,-1,1,-1,1);
+    myTerrain = new Terrain(64,-1,1,-1,1);
     myTerrain.loadBuffers();
 }
 
