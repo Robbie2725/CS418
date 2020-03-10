@@ -58,6 +58,12 @@ varying vec3 fragNormal;
 varying vec3 diffuseColorInterpolated;
 
 void main(void) {
+    // Set the color of the fog
+    vec4 fogColor = vec4(1.0,1.0,1.0,1.0);
+
+    // Get the distance to the camera (Fog Coordinate)
+    float fogCoord = (gl_FragCoord.y/gl_FragCoord.w);
+
     // normalize normal vector from the vertex shader
     vec3 normalVector = normalize(fragNormal);
 
@@ -81,7 +87,16 @@ void main(void) {
     float specWeight = pow(HdotN, uShininess); //raise to the shininess exponent
 
     // Set the color to the sum of each component
-    gl_FragColor = vec4(ka_ia+(LdotN*diffuseTerm)+(uKSpecular*specWeight*uSpecularLightColor), 1);
+    vec4 fragColor = vec4(ka_ia+(LdotN*diffuseTerm)+(uKSpecular*specWeight*uSpecularLightColor), 1);
+
+    // get the fog factor
+    float log2 = 1.442695; // For exponential
+    float fogDensity = 0.002;
+    float fogFactor = exp2( -fogDensity * fogDensity * fogCoord * fogCoord * log2);
+    // fogFactor = clamp(fogCoord, 0.0, 1.0);
+
+    // Set the frag color to the mix of the original color and the fog
+    gl_FragColor = mix(fogColor, fragColor, fogFactor);
 }
 </script>
 

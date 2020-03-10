@@ -361,7 +361,7 @@ function startup() {
   setupBuffers();
 
   // Set the clear color to white
-  gl.clearColor(0, 0, 0, 1);
+  gl.clearColor(1, 1, 1, 1);
 
   gl.enable(gl.DEPTH_TEST);
 
