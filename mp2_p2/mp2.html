@@ -1,0 +1,115 @@
+<!DOCTYPE>
+<html lang="en">
+<head>
+  <title>MP2</title>
+  <meta charset="utf-8">
+</head>
+
+<script id="blinn-phong-vs" type="x-shader/x-vertex">
+attribute vec3 aVertexNormal;
+attribute vec3 aVertexPosition;
+
+uniform mat4 uMVMatrix;
+uniform mat4 uPMatrix;
+uniform mat3 uNMatrix;
+
+uniform vec3 kDiffuse1;
+uniform vec3 kDiffuse2;
+uniform vec3 kDiffuse3;
+uniform vec3 kDiffuse4;
+
+varying vec3 fragNormal;
+varying vec3 vPositionEye;
+varying vec3 diffuseColorInterpolated;
+
+void main(void) {
+
+  // Get the vertex position in eye coordinates
+  vec4 vertexPositionEye4 = uMVMatrix * vec4(aVertexPosition, 1.0);
+  vPositionEye = vertexPositionEye4.xyz / vertexPositionEye4.w;
+
+  //Transform the normal to eye coordinates, pass to frag shader
+  fragNormal = uNMatrix*aVertexNormal;
+
+  // Depending on Z coordinate of vertex, pass one of the colors to the frag shader
+  if(aVertexPosition[2] > .06) diffuseColorInterpolated = kDiffuse1;
+  else if(aVertexPosition[2] > 0.02 ) diffuseColorInterpolated = kDiffuse2;
+  else if(aVertexPosition[2] > -.05) diffuseColorInterpolated = kDiffuse3;
+  else diffuseColorInterpolated = kDiffuse4;
+
+  gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
+}
+</script>
+
+<script id="blinn-phong-fs" type="x-shader/x-fragment">
+precision mediump float;
+
+uniform vec3 uLightPosition;
+uniform vec3 uDiffuseLightColor;
+uniform vec3 uAmbientLightColor;
+uniform vec3 uSpecularLightColor;
+
+uniform vec3 uKAmbient;
+uniform float uShininess;
+uniform vec3 uKSpecular;
+
+varying vec3 vPositionEye;
+varying vec3 fragNormal;
+varying vec3 diffuseColorInterpolated;
+
+void main(void) {
+    // Set the color of the fog
+    vec4 fogColor = vec4(1.0,1.0,1.0,1.0);
+
+    // Get the distance to the camera (Fog Coordinate)
+    float fogCoord = (gl_FragCoord.z/gl_FragCoord.w);
+
+    // normalize normal vector from the vertex shader
+    vec3 normalVector = normalize(fragNormal);
+
+    // get the vector to the light source
+    vec3 lightVector = normalize(uLightPosition-vPositionEye);
+
+    // Calculate the ambient light component (ambient light color * reflectivity)
+    vec3 ka_ia = uKAmbient*uAmbientLightColor;
+
+    // Weight of the diffuse light component (Light vector dot Normal vector)
+    float LdotN = max(dot(lightVector, normalVector), 0.0); // Diffuse lighting weight
+
+    //Calculate the diffuse term, i.e. k_d * i_d
+    // Use the k_d passed in from the vertex shader
+    vec3 diffuseTerm = diffuseColorInterpolated*uDiffuseLightColor;
+
+
+    //Now need to calculate the specular term and its weight
+    float specWeight=0.0;
+    float HdotN=0.0;
+    vec3 specTerm = uKSpecular*uSpecularLightColor;
+    if(LdotN > 0.0){
+        vec3 viewVector = normalize(-vPositionEye); // get the view vector (0-eye position)
+        vec3 halfwayVector = normalize(viewVector+lightVector); //get the normalized halfway vector
+        HdotN = max(dot(halfwayVector, normalVector), 0.0); // Calculate specular weight (H dot N)
+        specWeight = pow(HdotN, uShininess); //raise to the shininess exponent
+    }
+
+    // Set the color to the sum of each component
+    vec4 fragColor = vec4(ka_ia+(LdotN*diffuseTerm)+(specWeight*specTerm), 1);
+
+    // get the fog factor
+    float log2 = 1.442695; // For exponential
+    float fogDensity = .3;
+    float fogFactor = exp2( -fogDensity * fogDensity * fogCoord * fogCoord * log2);
+    fogFactor = clamp(fogFactor, 0.0, 1.0);
+
+    // Set the frag color to the mix of the original color and the fog
+    gl_FragColor = mix(fogColor, fragColor, fogFactor);
+}
+</script>
+
+<script src="gl-matrix-min.js"></script>
+<script src="webgl-utils.js"></script>
+<script src="Terrain.js"></script>
+<script src="mp2.js"></script>
+<body onload="startup();">
+  <canvas id="myGLCanvas" width="600" height="600"></canvas>
+</body>
