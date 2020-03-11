@@ -1,6 +1,6 @@
 /**
  * @fileoverview Terrain - A simple 3D terrain using WebGL
- * @author Eric Shaffer
+ * @author Eric Shaffer, Robbie Krokos (rkroko2)
  */
 
 /** Class implementing 3D terrain. */
@@ -22,6 +22,7 @@ class Terrain{
 
         // Allocate point to generate random plane
         this.p = [0, 0, 0];
+	// Allocate a vector for the normal to the random plane
         this.n = [0, 0, 0];
         // Allocate vertex array
         this.vBuffer = [];
@@ -56,8 +57,9 @@ class Terrain{
     */
     setVertex(v,i,j)
     {
-        //Your code here
+        // Calculate the index in the vBuffer
         var idx = 3*(i*(this.div+1)+j);
+        // Set the point in the vBuffer to v
         this.vBuffer[idx]=v[0];
         this.vBuffer[idx+1]=v[1];
         this.vBuffer[idx+2]=v[2];
@@ -71,8 +73,9 @@ class Terrain{
     */
     getVertex(v,i,j)
     {
-        //Your code here
+        // Calculate the index
         var idx = 3*(i*(this.div+1)+j);
+        // Set v to the point in the vBuffer
         v[0]=this.vBuffer[idx];
         v[1]=this.vBuffer[idx+1];
         v[2]=this.vBuffer[idx+2];

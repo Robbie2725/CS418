@@ -315,7 +315,7 @@ function draw() {
   mvPush();
 
   // generate transformation
-  vec3.set(transformVec,0.0,-0.25,-2.0);
+  vec3.set(transformVec,0.0,-0.15,-2.0);
   //add transformation to modelview
   mat4.translate(mvMatrix, mvMatrix,transformVec);
   // rotate modelview around y

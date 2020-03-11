@@ -74,14 +74,20 @@ void main(void) {
     // Use the k_d passed in from the vertex shader
     vec3 diffuseTerm = diffuseColorInterpolated*uDiffuseLightColor;
 
-    //Now need to calculate the specular term
-    vec3 viewVector = normalize(-vPositionEye); // get the view vector (0-eye position)
-    vec3 halfwayVector = normalize(viewVector+lightVector); //get the normalized halfway vector
-    float HdotN = max(dot(halfwayVector, normalVector), 0.0); // Calculate specular weight (H dot N)
-    float specWeight = pow(HdotN, uShininess); //raise to the shininess exponent
+
+    //Now need to calculate the specular term and its weight
+    float specWeight=0.0;
+    float HdotN=0.0;
+    vec3 specTerm = uKSpecular*uSpecularLightColor;
+    if(LdotN > 0.0){
+        vec3 viewVector = normalize(-vPositionEye); // get the view vector (0-eye position)
+        vec3 halfwayVector = normalize(viewVector+lightVector); //get the normalized halfway vector
+        HdotN = max(dot(halfwayVector, normalVector), 0.0); // Calculate specular weight (H dot N)
+        specWeight = pow(HdotN, uShininess); //raise to the shininess exponent
+    }
 
     // Set the color to the sum of each component
-    gl_FragColor = vec4(ka_ia+(LdotN*diffuseTerm)+(uKSpecular*specWeight*uSpecularLightColor), 1);
+    gl_FragColor = vec4(ka_ia+(LdotN*diffuseTerm)+(specWeight*specTerm), 1);
 }
 </script>
 
