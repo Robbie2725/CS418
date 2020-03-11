@@ -315,13 +315,13 @@ function draw() {
   mvPush();
 
   // generate transformation
-  vec3.set(transformVec,0.0,-0.15,-2.0);
+  vec3.set(transformVec, 0.0, -0.25, -2.0);
   //add transformation to modelview
   mat4.translate(mvMatrix, mvMatrix,transformVec);
   // rotate modelview around y
   mat4.rotateY(mvMatrix, mvMatrix, degToRad(viewRot));
   // rotate around x
-  mat4.rotateX(mvMatrix, mvMatrix, degToRad(-65));
+  mat4.rotateX(mvMatrix, mvMatrix, degToRad(-75));
   // Update the matrix uniforms to hold calculations just performed
   setMatrixUniforms();
   // Send the lighting information to shaders
