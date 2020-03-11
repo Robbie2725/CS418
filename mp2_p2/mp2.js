@@ -348,7 +348,7 @@ function draw() {
  * Populate buffers with data
  */
 function setupBuffers() {
-    myTerrain = new Terrain(150,-6 ,6,-6,6);
+    myTerrain = new Terrain(256,-1 ,1,-1,1);
     myTerrain.loadBuffers();
 }
 

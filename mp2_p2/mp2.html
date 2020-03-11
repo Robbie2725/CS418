@@ -97,7 +97,7 @@ void main(void) {
 
     // get the fog factor
     float log2 = 1.442695; // For exponential
-    float fogDensity = .3;
+    float fogDensity = .5;
     float fogFactor = exp2( -fogDensity * fogDensity * fogCoord * fogCoord * log2);
     fogFactor = clamp(fogFactor, 0.0, 1.0);
 
