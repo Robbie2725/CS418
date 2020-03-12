@@ -252,15 +252,20 @@ generatePlane(){
   this.p = [Math.random()*(this.maxX-this.minX)+this.minX, Math.random()*(this.maxY-this.minY)+this.minY, 0];
 
   //random unit vector for the normal vector
-  var normal = [Math.random()-.5, Math.random()-.5, 0]; //get random 2d vector
-  var magnitude = Math.sqrt(normal[0]*normal[0] + normal[1]*normal[1]);
-  this.n = [normal[0]/magnitude, normal[1]/magnitude, 0]; //normalize
+  // var normal = [Math.random()-.5, Math.random()-.5, 0]; //get random 2d vector
+  // var magnitude = Math.sqrt(normal[0]*normal[0] + normal[1]*normal[1]);
+  // this.n = [normal[0]/magnitude, normal[1]/magnitude, 0]; //normalize
+  var angle = 2*Math.random()*Math.PI;
+  var n_x = Math.cos(angle);
+  var n_y = Math.sin(angle);
+  this.n = [n_x, n_y, 0];
 }
 
 randomTerrain(){
-  var delta=.002; //used to increase or decrease z component
+  var delta=.0015; //used to increase or decrease z component
+  var result;
   // Generate 100 random plains
-  for(var i=0; i<500; i++){
+  for(var i=0; i<700; i++){
     this.generatePlane(); //generate random plane
 
     //Loop through each point in the terrain
@@ -274,7 +279,7 @@ randomTerrain(){
         var v_p = [vtx[0]-this.p[0], vtx[1]-this.p[1], vtx[2]-this.p[2]] ;
 
         // Calculate dot product of plain to point vector and normal vector
-        var result=0;
+        result=0;
         for (var j = 0; j < 3; j++) {
           result += v_p[j] * this.n[j];
         }
@@ -283,7 +288,7 @@ randomTerrain(){
         if(result>0) {
           vtx[2]+=delta;
         }
-        else { //else subtract delta
+        else{ //else subtract delta
           vtx[2]-=delta;
         }
 

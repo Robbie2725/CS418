@@ -41,7 +41,7 @@ var viewRot = 0;
 var transformVec = vec3.create();
 
 // Initialize the vector....
-vec3.set(transformVec,0.0,0.0,-2.0);
+vec3.set(transformVec,0.0,-.25,-2.0);
 
 /** @global An object holding the geometry for a 3D terrain */
 var myTerrain;
@@ -88,11 +88,13 @@ var fogOn = 1;
 
 var currentKeysPressed = {};
 
+var eulerAngles = [-65,0,0];
+
 var currOrientation = quat.create();
 
-var eulerAngles = [0,0,0];
-
 var speed = 0;
+
+var directionVector = vec3.fromValues(0,0,0);
 
 
 function handleKeyDown(event){
@@ -350,11 +352,15 @@ function draw() {
   vec3.add(viewPt, eyePt, viewDir);
   // Then generate the lookat matrix and initialize the MV matrix to that view
   mat4.lookAt(mvMatrix,eyePt,viewPt,up);
-
   //push current modelview matrix to stack
   mvPush();
 
-
+  mat4.translate(mvMatrix, mvMatrix, transformVec);
+  var orientation = mat4.create();
+  mat4.fromRotationTranslation(orientation, currOrientation, directionVector);
+  // mat4.fromQuat(orientation, currOrientation);
+  // mat4.multiply(mvMatrix, mvMatrix, orientation);
+  mat4.multiply(mvMatrix, mvMatrix, orientation);
   // Update the matrix uniforms to hold calculations just performed
   setMatrixUniforms();
   gl.uniform1i(shaderProgram.uniformFogSelect, fogOn);
@@ -384,17 +390,29 @@ function setupBuffers() {
  */
 function animate(){
   //Update speed if q/w pressed
-  if(currentKeysPressed["q"]) speed+=.1;
-  else if(currentKeysPressed["w"]) speed -= .1;
+  if(currentKeysPressed["q"]) speed+=.001;
+  else if(currentKeysPressed["w"]) speed -= .001;
+  if(speed<0) speed=0;
 
   //Update angles if one of the arrow keys is pressed
-  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] += .01;
-  else if(currentKeysPressed["ArrowDown"]) eulerAngles[0] -= .01;
-  else if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] += .01;
-  else if(currentKeysPressed["ArrowRight"]) eulerAngles[2] -= .01;
+  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] += .4;
+  if(currentKeysPressed["ArrowDown"]) eulerAngles[0] -= .4;
+  if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] += .4; // Should this be y or z?
+  if(currentKeysPressed["ArrowRight"]) eulerAngles[2] -= .4;
 
-  console.log("Speed: ", speed);
-  console.log("Euler Angles: ", eulerAngles);
+  // Update orientation quaternion
+  var newOrientation = quat.create();
+  quat.fromEuler(newOrientation, eulerAngles[0], eulerAngles[1], eulerAngles[2]);
+  quat.add(currOrientation, currOrientation, newOrientation);
+  quat.normalize(currOrientation, currOrientation);
+
+  // Compute new direction vector
+  var q_axis = vec3.create();
+  var q_angle = quat.getAxisAngle(q_axis, currOrientation);
+  // console.log(q_axis, q_angle);
+  var speedVector = vec3.fromValues(0,0,speed);
+  // vec3.rotateX(speedVector, speedVector, speedVector, q_angle);
+  vec3.add(directionVector, directionVector, speedVector)
 }
 
 /**
