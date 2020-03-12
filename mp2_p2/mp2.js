@@ -82,6 +82,33 @@ var kEdgeBlack = [0.0,0.0,0.0];
 /** @global Edge color for wireframe rendering */
 var kEdgeWhite = [1.0,1.0,1.0];
 
+var fogOn = 1;
+
+var currentKeysPressed = {};
+
+var EulerAngles = vec3.create();
+
+var speed;
+
+
+function handleKeyDown(event){
+  console.log("Key down ", event.key," code ", event.code )
+  if(event.key == "ArrowDown" || event.key == "ArrowUp" || event.key == "ArrowLeft" || event.key == "ArrowRight"){
+    event.preventDefault();
+  }
+  else if (event.key == "q" || event.key == "w"){
+    event.preventDefault();
+  }
+  currentKeysPressed[event.key] = true;
+}
+
+function handleKeyUp(event){
+  console.log("Key up ", event.key," code ", event.code )
+  currentKeysPressed[event.key] = false;
+}
+
+
+
 
 /**
  * Translates degrees to radians
@@ -299,6 +326,7 @@ function setupShaders() {
   shaderProgram.uniformDiffuseColorLoc3 = gl.getUniformLocation(shaderProgram, "kDiffuse3");
   shaderProgram.uniformDiffuseColorLoc4 = gl.getUniformLocation(shaderProgram, "kDiffuse4");
   shaderProgram.uniformSpecularMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKSpecular");
+  shaderProgram.uniformFogSelect = gl.getUniformLocation(shaderProgram, "uFogOn");
 
 }
 
@@ -332,6 +360,7 @@ function draw() {
   mat4.rotateX(mvMatrix, mvMatrix, degToRad(-75));
   // Update the matrix uniforms to hold calculations just performed
   setMatrixUniforms();
+  gl.uniform1i(shaderProgram.uniformFogSelect, fogOn);
   // Send the lighting information to shaders
   setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
   // send material information to shaders
@@ -373,6 +402,8 @@ function startup() {
 
   gl.enable(gl.DEPTH_TEST);
 
+  document.onkeydown = handleKeyDown;
+  document.onkeyup = handleKeyUp;
   // Call tick function, which will then be called every subsequent animation frame
   tick();
 }
@@ -381,6 +412,13 @@ function startup() {
  * Tick called for every animation frame.
  */
 function tick() {
-    requestAnimFrame(tick);
+    requestAnimationFrame(tick);
+    if(document.getElementById("fogSelectOn").checked){
+      fogOn = 1;
+    }
+    else {
+      fogOn = 0;
+    }
+    // console.log("Keys Pressed: ", currentKeysPressed);
     draw();
 }

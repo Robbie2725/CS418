@@ -44,6 +44,8 @@ void main(void) {
 <script id="blinn-phong-fs" type="x-shader/x-fragment">
 precision mediump float;
 
+uniform int uFogOn;
+
 uniform vec3 uLightPosition;
 uniform vec3 uDiffuseLightColor;
 uniform vec3 uAmbientLightColor;
@@ -95,14 +97,19 @@ void main(void) {
     // Set the color to the sum of each component
     vec4 fragColor = vec4(ka_ia+(LdotN*diffuseTerm)+(specWeight*specTerm), 1);
 
-    // get the fog factor
-    float log2 = 1.442695; // For exponential
-    float fogDensity = .5;
-    float fogFactor = exp2( -fogDensity * fogDensity * fogCoord * fogCoord * log2);
-    fogFactor = clamp(fogFactor, 0.0, 1.0);
+    if(uFogOn!=0){
+      // get the fog factor
+      float log2 = 1.442695; // For exponential
+      float fogDensity = .5;
+      float fogFactor = exp2( -fogDensity * fogDensity * fogCoord * fogCoord * log2);
+      fogFactor = clamp(fogFactor, 0.0, 1.0);
 
-    // Set the frag color to the mix of the original color and the fog
-    gl_FragColor = mix(fogColor, fragColor, fogFactor);
+      // Set the frag color to the mix of the original color and the fog
+      gl_FragColor = mix(fogColor, fragColor, fogFactor);
+    }
+    else{
+      gl_FragColor = fragColor;
+    }
 }
 </script>
 
@@ -111,5 +118,13 @@ void main(void) {
 <script src="Terrain.js"></script>
 <script src="mp2.js"></script>
 <body onload="startup();">
+  <h2>Camera Control:</h2>
+  <h6>'q' - Speed Up, 'w' - Slow Down </br>
+  'Up/Down Arrow' - Pitch Up/Down </br>
+  'Left/Right Arrow' - Roll Left/Right</h6>
   <canvas id="myGLCanvas" width="600" height="600"></canvas>
+  <br>
+  <input type="radio" name="fogSelect" id="fogSelectOn" value="on" checked> Fog on
+  <input type="radio" name="fogSelect" id="fogSelectOff" value="off"> Fog off
+
 </body>
