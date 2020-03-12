@@ -20,6 +20,8 @@ var vec3 = glMatrix.vec3;
 
 var vec4 = glMatrix.vec4;
 
+var quat = glMatrix.quat;
+
 /** @global The Modelview matrix */
 var mvMatrix = mat4.create();
 
@@ -86,9 +88,11 @@ var fogOn = 1;
 
 var currentKeysPressed = {};
 
-var EulerAngles = vec3.create();
+var currOrientation = quat.create();
 
-var speed;
+var eulerAngles = [0,0,0];
+
+var speed = 0;
 
 
 function handleKeyDown(event){
@@ -350,14 +354,7 @@ function draw() {
   //push current modelview matrix to stack
   mvPush();
 
-  // generate transformation
-  vec3.set(transformVec, 0.0, -0.25, -2.0);
-  //add transformation to modelview
-  mat4.translate(mvMatrix, mvMatrix,transformVec);
-  // rotate modelview around y
-  mat4.rotateY(mvMatrix, mvMatrix, degToRad(viewRot));
-  // rotate around x
-  mat4.rotateX(mvMatrix, mvMatrix, degToRad(-75));
+
   // Update the matrix uniforms to hold calculations just performed
   setMatrixUniforms();
   gl.uniform1i(shaderProgram.uniformFogSelect, fogOn);
@@ -379,6 +376,25 @@ function draw() {
 function setupBuffers() {
     myTerrain = new Terrain(256,-1 ,1,-1,1);
     myTerrain.loadBuffers();
+}
+
+/**
+ * Called Each time frame is rendered, updates variables to simulate
+ * plane flying over the terrain
+ */
+function animate(){
+  //Update speed if q/w pressed
+  if(currentKeysPressed["q"]) speed+=.1;
+  else if(currentKeysPressed["w"]) speed -= .1;
+
+  //Update angles if one of the arrow keys is pressed
+  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] += .01;
+  else if(currentKeysPressed["ArrowDown"]) eulerAngles[0] -= .01;
+  else if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] += .01;
+  else if(currentKeysPressed["ArrowRight"]) eulerAngles[2] -= .01;
+
+  console.log("Speed: ", speed);
+  console.log("Euler Angles: ", eulerAngles);
 }
 
 /**
@@ -420,5 +436,6 @@ function tick() {
       fogOn = 0;
     }
     // console.log("Keys Pressed: ", currentKeysPressed);
+    animate();
     draw();
 }
