@@ -88,13 +88,17 @@ var fogOn = 1;
 
 var currentKeysPressed = {};
 
-var eulerAngles = [-65,0,0];
+var eulerAngles = [1.2,0,0];
 
-var currOrientation = quat.create();
+var roll = quat.create();
+
+var pitch = quat.create();
 
 var speed = 0;
 
-var directionVector = vec3.fromValues(0,0,0);
+// var directionVector = vec3.fromValues(0,0,1);
+
+var curPosition = vec3.fromValues(0.0, -.25, -2.0);
 
 
 function handleKeyDown(event){
@@ -350,18 +354,17 @@ function draw() {
 
   // We want to look down -z, so create a lookat point in that direction
   vec3.add(viewPt, eyePt, viewDir);
+
   // Then generate the lookat matrix and initialize the MV matrix to that view
   mat4.lookAt(mvMatrix,eyePt,viewPt,up);
   //push current modelview matrix to stack
   mvPush();
-
   mat4.translate(mvMatrix, mvMatrix, transformVec);
-  var orientation = mat4.create();
-  mat4.fromRotationTranslation(orientation, currOrientation, directionVector);
-  // mat4.fromQuat(orientation, currOrientation);
-  // mat4.multiply(mvMatrix, mvMatrix, orientation);
-  mat4.multiply(mvMatrix, mvMatrix, orientation);
-  // Update the matrix uniforms to hold calculations just performed
+  var rot = mat4.create();
+  mat4.fromQuat(rot, roll);
+  mat4.multiply(mvMatrix, mvMatrix, rot);
+  mat4.fromQuat(rot, pitch);
+  mat4.multiply(mvMatrix, mvMatrix, rot);
   setMatrixUniforms();
   gl.uniform1i(shaderProgram.uniformFogSelect, fogOn);
   // Send the lighting information to shaders
@@ -395,24 +398,17 @@ function animate(){
   if(speed<0) speed=0;
 
   //Update angles if one of the arrow keys is pressed
-  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] += .4;
-  if(currentKeysPressed["ArrowDown"]) eulerAngles[0] -= .4;
-  if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] += .4; // Should this be y or z?
-  if(currentKeysPressed["ArrowRight"]) eulerAngles[2] -= .4;
+  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] += .01;
+  if(currentKeysPressed["ArrowDown"]) eulerAngles[0] -= .01;
+  if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] += .01; // Should this be y or z?
+  if(currentKeysPressed["ArrowRight"]) eulerAngles[2] -= .01;
 
-  // Update orientation quaternion
-  var newOrientation = quat.create();
-  quat.fromEuler(newOrientation, eulerAngles[0], eulerAngles[1], eulerAngles[2]);
-  quat.add(currOrientation, currOrientation, newOrientation);
-  quat.normalize(currOrientation, currOrientation);
+  pitch = quat.create();
+  roll = quat.create();
+  quat.setAxisAngle(roll, viewPt, eulerAngles[2]);
+  var temp = vec3.create();
+  quat.setAxisAngle(pitch, vec3.cross(temp, up, viewPt), eulerAngles[0]);
 
-  // Compute new direction vector
-  var q_axis = vec3.create();
-  var q_angle = quat.getAxisAngle(q_axis, currOrientation);
-  // console.log(q_axis, q_angle);
-  var speedVector = vec3.fromValues(0,0,speed);
-  // vec3.rotateX(speedVector, speedVector, speedVector, q_angle);
-  vec3.add(directionVector, directionVector, speedVector)
 }
 
 /**
