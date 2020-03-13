@@ -88,11 +88,13 @@ var fogOn = 1;
 
 var currentKeysPressed = {};
 
-var eulerAngles = [1.2,0,0];
+var eulerAngles = [0,0,0];
 
 var roll = quat.create();
 
 var pitch = quat.create();
+
+var curOrientation = quat.create();
 
 var speed = 0;
 
@@ -353,22 +355,34 @@ function draw() {
                    0.1, 200.0);
 
   // We want to look down -z, so create a lookat point in that direction
+  vec3.transformQuat(up, up, roll);
+  // vec3.transformQuat(viewDir, viewDir, roll);
+  var pitchAxis = vec3.create();
+  quat.setAxisAngle(pitch, vec3.cross(pitchAxis, up, viewDir), eulerAngles[0]);
+  eulerAngles[0]=0;
+  vec3.transformQuat(up, up, pitch);
+  vec3.transformQuat(viewDir, viewDir, pitch);
+  vec3.scaleAndAdd(eyePt, eyePt, viewDir, speed);
   vec3.add(viewPt, eyePt, viewDir);
-
-  // Then generate the lookat matrix and initialize the MV matrix to that view
   mat4.lookAt(mvMatrix,eyePt,viewPt,up);
   //push current modelview matrix to stack
+  var newlight = vec3.create();
+  vec3.transformMat4(newlight, lightPosition, mvMatrix);
   mvPush();
+  // var temp = vec3.create();
+  // vec3.scale(temp, viewPt, -speed);
+  // vec3.add(curPosition, curPosition, temp);
   mat4.translate(mvMatrix, mvMatrix, transformVec);
-  var rot = mat4.create();
-  mat4.fromQuat(rot, roll);
-  mat4.multiply(mvMatrix, mvMatrix, rot);
-  mat4.fromQuat(rot, pitch);
-  mat4.multiply(mvMatrix, mvMatrix, rot);
+  mat4.rotateX(mvMatrix, mvMatrix, degToRad(-90));
+  // var rot = mat4.create();
+  // mat4.fromQuat(rot, roll);
+  // mat4.multiply(mvMatrix, mvMatrix, rot);
+  // mat4.fromQuat(rot, pitch);
+  // mat4.multiply(mvMatrix, mvMatrix, rot);
   setMatrixUniforms();
   gl.uniform1i(shaderProgram.uniformFogSelect, fogOn);
   // Send the lighting information to shaders
-  setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
+  setLightUniforms(newlight,lAmbient,lDiffuse,lSpecular);
   // send material information to shaders
   setMaterialUniforms(shininess,kAmbient,kTerrainDiffuse,kSpecular);
   // draw the terrain
@@ -398,17 +412,13 @@ function animate(){
   if(speed<0) speed=0;
 
   //Update angles if one of the arrow keys is pressed
-  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] += .01;
-  if(currentKeysPressed["ArrowDown"]) eulerAngles[0] -= .01;
-  if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] += .01; // Should this be y or z?
-  if(currentKeysPressed["ArrowRight"]) eulerAngles[2] -= .01;
+  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] -= .01;
+  if(currentKeysPressed["ArrowDown"]) eulerAngles[0] += .01;
+  if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] -= .03; // Should this be y or z?
+  if(currentKeysPressed["ArrowRight"]) eulerAngles[2] += .03;
 
-  pitch = quat.create();
-  roll = quat.create();
-  quat.setAxisAngle(roll, viewPt, eulerAngles[2]);
-  var temp = vec3.create();
-  quat.setAxisAngle(pitch, vec3.cross(temp, up, viewPt), eulerAngles[0]);
-
+  quat.setAxisAngle(roll, viewDir , eulerAngles[2]);
+  eulerAngles[2]=0;
 }
 
 /**
