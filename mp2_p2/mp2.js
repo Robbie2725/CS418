@@ -12,14 +12,20 @@ var canvas;
 /** @global A simple GLSL shader program */
 var shaderProgram;
 
+// gl matrix variables
+/** @global Global variable to simplify mat4 operations */
 var mat4 = glMatrix.mat4;
 
+/** @global Global variable to simplify mat3 operations */
 var mat3 = glMatrix.mat3;
 
+/** @global Global variable to simplify mat4 operations */
 var vec3 = glMatrix.vec3;
 
+/** @global Global variable to simplify vec4 operations */
 var vec4 = glMatrix.vec4;
 
+/** @global Global variable to simplify quat operations */
 var quat = glMatrix.quat;
 
 /** @global The Modelview matrix */
@@ -45,7 +51,6 @@ vec3.set(transformVec,0.0,-.25,-2.0);
 
 /** @global An object holding the geometry for a 3D terrain */
 var myTerrain;
-
 
 // View parameters
 /** @global Location of the camera in world coordinates */
@@ -84,38 +89,50 @@ var kEdgeBlack = [0.0,0.0,0.0];
 /** @global Edge color for wireframe rendering */
 var kEdgeWhite = [1.0,1.0,1.0];
 
+/** @global Variable passed to shader to determine if fog on/off */
 var fogOn = 1;
 
+/** @global Array of currently pressed keys */
 var currentKeysPressed = {};
 
+/** @global X, Y, and Z Euler angles for orientation */
 var eulerAngles = [0,0,0];
 
+/** @global Quaternion to store the current roll orientation */
 var roll = quat.create();
 
+/** @global Quaternion to store the current pitch orientation */
 var pitch = quat.create();
 
-var curOrientation = quat.create();
+/** @global The current speed of the 'plane' */
+var speed = 0.001;
 
-var speed = 0;
-
-// var directionVector = vec3.fromValues(0,0,1);
-
-var curPosition = vec3.fromValues(0.0, -.25, -2.0);
-
-
+/**
+ * Handles the key press
+ * @param {event} event from browser
+ */
 function handleKeyDown(event){
-  console.log("Key down ", event.key," code ", event.code )
+  // log the key press
+  console.log("Key down ", event.key," code ", event.code );
+  // prevent default action so we can use for our own purposes
   if(event.key == "ArrowDown" || event.key == "ArrowUp" || event.key == "ArrowLeft" || event.key == "ArrowRight"){
     event.preventDefault();
   }
   else if (event.key == "q" || event.key == "w"){
     event.preventDefault();
   }
+  // store it in the array as true
   currentKeysPressed[event.key] = true;
 }
 
+/**
+ * Handles the key release
+ * @param {event} event from browser
+ */
 function handleKeyUp(event){
-  console.log("Key up ", event.key," code ", event.code )
+  // log the key release
+  console.log("Key up ", event.key," code ", event.code );
+  // set value in array to false
   currentKeysPressed[event.key] = false;
 }
 
@@ -354,24 +371,22 @@ function draw() {
                    gl.viewportWidth / gl.viewportHeight,
                    0.1, 200.0);
 
-
+  // update mv matrix with lookat
   mat4.lookAt(mvMatrix,eyePt,viewPt,up);
-  //push current modelview matrix to stack
+  // update the position of the light source (since camera is moving)
   var newlight = vec3.create();
   vec3.transformMat4(newlight, lightPosition, mvMatrix);
+
+  //push current modelview matrix to stack
   mvPush();
-  // var temp = vec3.create();
-  // vec3.scale(temp, viewPt, -speed);
-  // vec3.add(curPosition, curPosition, temp);
+  // update the model view
   mat4.translate(mvMatrix, mvMatrix, transformVec);
   mat4.rotateX(mvMatrix, mvMatrix, degToRad(-90));
-  // var rot = mat4.create();
-  // mat4.fromQuat(rot, roll);
-  // mat4.multiply(mvMatrix, mvMatrix, rot);
-  // mat4.fromQuat(rot, pitch);
-  // mat4.multiply(mvMatrix, mvMatrix, rot);
   setMatrixUniforms();
+
+  // Send info to determine if fog on/off
   gl.uniform1i(shaderProgram.uniformFogSelect, fogOn);
+
   // Send the lighting information to shaders
   setLightUniforms(newlight,lAmbient,lDiffuse,lSpecular);
   // send material information to shaders
@@ -408,18 +423,24 @@ function animate(){
   if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] -= .03; // Should this be y or z?
   if(currentKeysPressed["ArrowRight"]) eulerAngles[2] += .03;
 
+  // update the roll quaternion (since we know the axis rotated around is the previous view direction)
   quat.setAxisAngle(roll, viewDir , eulerAngles[2]);
-  eulerAngles[2]=0;
+  eulerAngles[2]=0; // reset the angle ( so it will stop rotating)
 
-  // We want to look down -z, so create a lookat point in that direction
+  // Update the new up vector based on roll orientation
   vec3.transformQuat(up, up, roll);
-  // vec3.transformQuat(viewDir, viewDir, roll);
+
+  // Pitch axis is the cross product of the up vector and view direction
   var pitchAxis = vec3.create();
+  // update the pitch quaternion
   quat.setAxisAngle(pitch, vec3.cross(pitchAxis, up, viewDir), eulerAngles[0]);
-  eulerAngles[0]=0;
+  eulerAngles[0]=0; //reset the angle so it will stop rotating
+
+  // update up vector and view direction based on pitch quaternion
   vec3.transformQuat(up, up, pitch);
   vec3.transformQuat(viewDir, viewDir, pitch);
   vec3.scaleAndAdd(eyePt, eyePt, viewDir, speed);
+  // get the new eyePt for the next time lookat function called
   vec3.add(viewPt, eyePt, viewDir);
 }
 
@@ -455,13 +476,15 @@ function startup() {
  */
 function tick() {
     requestAnimationFrame(tick);
+
+    // determine if fog on/off based of button
     if(document.getElementById("fogSelectOn").checked){
       fogOn = 1;
     }
     else {
       fogOn = 0;
     }
-    // console.log("Keys Pressed: ", currentKeysPressed);
+    
     animate();
     draw();
 }

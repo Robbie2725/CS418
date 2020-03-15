@@ -247,6 +247,9 @@ generateLines()
 
 }
 
+/**
+ * Generates a plane from a random point and a random normal
+ */
 generatePlane(){
   // random point from range (minX, minY, 0) to (maxX, maxY, 0)
   this.p = [Math.random()*(this.maxX-this.minX)+this.minX, Math.random()*(this.maxY-this.minY)+this.minY, 0];
@@ -261,11 +264,15 @@ generatePlane(){
   this.n = [n_x, n_y, 0];
 }
 
+/**
+ * increases/decreases vertices z coord based off of location relative to
+ * 750 randomly generated terrains
+ */
 randomTerrain(){
-  var delta=.0025; //used to increase or decrease z component
-  var result;
-  // Generate 100 random plains
-  for(var i=0; i<700; i++){
+  var delta=.0035; //used to increase or decrease z component
+  var result; //used to compute dot product
+  // Generate 750 random plains
+  for(var i=0; i<750; i++){
     this.generatePlane(); //generate random plane
 
     //Loop through each point in the terrain
@@ -299,6 +306,9 @@ randomTerrain(){
   }
 }
 
+/**
+ * Sets the normals (in nBuffer) for all the vertices in the vertex buffer
+ */
 setVertexNormals(){
 
   // Loop through each 'square' of the terrain grid

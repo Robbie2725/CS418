@@ -100,7 +100,7 @@ void main(void) {
     if(uFogOn!=0){
       // get the fog factor
       float log2 = 1.442695; // For exponential
-      float fogDensity = .7;
+      float fogDensity = .5;
       float fogFactor = exp2( -fogDensity * fogDensity * fogCoord * fogCoord * log2);
       fogFactor = clamp(fogFactor, 0.0, 1.0);
 
@@ -108,6 +108,7 @@ void main(void) {
       gl_FragColor = mix(fogColor, fragColor, fogFactor);
     }
     else{
+      // else set it only to the original fragment color (no mix)
       gl_FragColor = fragColor;
     }
 }
