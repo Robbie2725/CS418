@@ -354,16 +354,7 @@ function draw() {
                    gl.viewportWidth / gl.viewportHeight,
                    0.1, 200.0);
 
-  // We want to look down -z, so create a lookat point in that direction
-  vec3.transformQuat(up, up, roll);
-  // vec3.transformQuat(viewDir, viewDir, roll);
-  var pitchAxis = vec3.create();
-  quat.setAxisAngle(pitch, vec3.cross(pitchAxis, up, viewDir), eulerAngles[0]);
-  eulerAngles[0]=0;
-  vec3.transformQuat(up, up, pitch);
-  vec3.transformQuat(viewDir, viewDir, pitch);
-  vec3.scaleAndAdd(eyePt, eyePt, viewDir, speed);
-  vec3.add(viewPt, eyePt, viewDir);
+
   mat4.lookAt(mvMatrix,eyePt,viewPt,up);
   //push current modelview matrix to stack
   var newlight = vec3.create();
@@ -397,7 +388,7 @@ function draw() {
  * Populate buffers with data
  */
 function setupBuffers() {
-    myTerrain = new Terrain(256,-1 ,1,-1,1);
+    myTerrain = new Terrain(256,-6 ,6,-6,6);
     myTerrain.loadBuffers();
 }
 
@@ -412,13 +403,24 @@ function animate(){
   if(speed<0) speed=0;
 
   //Update angles if one of the arrow keys is pressed
-  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] -= .01;
-  if(currentKeysPressed["ArrowDown"]) eulerAngles[0] += .01;
+  if(currentKeysPressed["ArrowUp"]) eulerAngles[0] -= .015;
+  if(currentKeysPressed["ArrowDown"]) eulerAngles[0] += .015;
   if(currentKeysPressed["ArrowLeft"]) eulerAngles[2] -= .03; // Should this be y or z?
   if(currentKeysPressed["ArrowRight"]) eulerAngles[2] += .03;
 
   quat.setAxisAngle(roll, viewDir , eulerAngles[2]);
   eulerAngles[2]=0;
+
+  // We want to look down -z, so create a lookat point in that direction
+  vec3.transformQuat(up, up, roll);
+  // vec3.transformQuat(viewDir, viewDir, roll);
+  var pitchAxis = vec3.create();
+  quat.setAxisAngle(pitch, vec3.cross(pitchAxis, up, viewDir), eulerAngles[0]);
+  eulerAngles[0]=0;
+  vec3.transformQuat(up, up, pitch);
+  vec3.transformQuat(viewDir, viewDir, pitch);
+  vec3.scaleAndAdd(eyePt, eyePt, viewDir, speed);
+  vec3.add(viewPt, eyePt, viewDir);
 }
 
 /**

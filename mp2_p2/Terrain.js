@@ -262,7 +262,7 @@ generatePlane(){
 }
 
 randomTerrain(){
-  var delta=.0015; //used to increase or decrease z component
+  var delta=.0025; //used to increase or decrease z component
   var result;
   // Generate 100 random plains
   for(var i=0; i<700; i++){
