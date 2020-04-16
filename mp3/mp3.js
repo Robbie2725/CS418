@@ -66,16 +66,45 @@ var kEdgeBlack = [0.0,0.0,0.0];
 /** @global Edge color for wireframe rendering */
 var kEdgeWhite = [1.0,1.0,1.0];
 
+/** @global Variable holding the texture */
+// var texture;
 
 //Model parameters
 var eulerY=0;
+
+// cubemap image info TODO == move this somewhere else
+// const faceInfos = [
+//   {
+//     target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+//     url: 'London/pos-x.jpg'
+//   },
+//   {
+//     target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+//     url: 'London/neg-x.jpg'
+//   },
+//   {
+//     target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+//     url: 'London/pos-y.jpg'
+//   },
+//   {
+//     target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+//     url: 'London/neg-y.jpg'
+//   },
+//   {
+//     target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+//     url: 'London/pos-z.jpg'
+//   },
+//   {
+//     target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
+//     url: 'London/neg-z.jpg'
+//   }
+// ];
 
 //-------------------------------------------------------------------------
 /**
  * Asynchronously read a server-side text file
  */
 function asyncGetFile(url) {
-  //Your code here
     console.log("Getting obj file");
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
@@ -406,11 +435,14 @@ function handleKeyUp(event) {
   canvas = document.getElementById("myGLCanvas");
   gl = createGLContext(canvas);
   setupShaders();
-  setupMesh("cow.obj");
+  // setupMesh("cow.obj");
+  myMesh = new TriMesh();
+  myMesh.loadCube([0.5, 0.5, 0.5], [-.5,-.5,-.5]);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
   document.onkeydown = handleKeyDown;
   document.onkeyup = handleKeyUp;
+  // setupCubeMap(); // Sets up cubemap
   tick();
 }
 
@@ -433,5 +465,5 @@ function animate() {
 function tick() {
     requestAnimFrame(tick);
     animate();
-    if(myMesh.loaded()) draw();
+    if(myMesh.loaded() || myMesh.static()) draw();
 }

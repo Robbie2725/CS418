@@ -10,6 +10,7 @@ class TriMesh{
  */
     constructor(){
         this.isLoaded = false;
+        this.isStatic = true;
         this.minXYZ=[0,0,0];
         this.maxXYZ=[0,0,0];
 
@@ -46,13 +47,30 @@ class TriMesh{
         return this.isLoaded;
     }
 
-
+    static(){
+        return this.isStatic;
+    }
 
     /**
     * Find a box defined by min and max XYZ coordinates
     */
     computeAABB(){
-
+      var idx=1;
+      var min=[0.0,0.0,0.0];
+      var max=[0.0,0.0,0.0];
+      this.getVertex(0, min);
+      this.getVertex(0, max);;
+      while(idx<this.numVertices){
+        var temp=[0.0,0.0,0.0];
+        this.getVertex(idx, temp);
+        for(let i=0; i<3; i++){
+          min[i] = Math.min(min[i], temp[i]);
+          max[i] = Math.max(max[i], temp[i]);
+        }
+        idx++;
+      }
+      this.maxXYZ = max;
+      this.minXYZ = min;
     }
 
     /**
@@ -61,7 +79,8 @@ class TriMesh{
     * @param {Object} an array object of length 3 to fill win max XYZ coords
     */
     getAABB(minXYZ,maxXYZ){
-
+      minXYZ = this.minXYZ;
+      maxXYZ = this.maxXYZ;
     }
 
     /**
@@ -70,6 +89,7 @@ class TriMesh{
     */
     loadFromOBJ(fileText)
     {
+        this.isStatic = false;
         // Split the text into array of text lines
         const fileSplit = fileText.split('\n');
         var curLn=0; //the current line of the file
@@ -87,8 +107,7 @@ class TriMesh{
             continue;
           }
           var vSplit = fileSplit[curLn].split(' ');
-          // console.log(vSplit);
-          this.vBuffer.push(parseFloat(vSplit[1]), parseFloat(vSplit[2]), parseFloat(vSplit[3]));
+          this.setVertex(vCount, parseFloat(vSplit[1]), parseFloat(vSplit[2]), parseFloat(vSplit[3]))
           curLn++;
           vCount++;
         }
@@ -117,8 +136,62 @@ class TriMesh{
         this.generateLines();
         console.log("TriMesh: Generated lines");
 
+        this.computeAABB();
+        console.log('AABB:');
+        console.log(this.minXYZ);
+        console.log(this.maxXYZ);
+
         myMesh.loadBuffers();
         this.isLoaded = true;
+    }
+
+    loadCube(maxXYZ, minXYZ){
+      this.isLoaded = false;
+      this.numVertices = 8;
+      this.numFaces = 12;
+      this.vBuffer.push(maxXYZ[0], maxXYZ[1], maxXYZ[2]);
+      this.vBuffer.push(minXYZ[0], minXYZ[1], minXYZ[2]);
+      this.vBuffer.push(maxXYZ[0], maxXYZ[1], minXYZ[2]);
+      this.vBuffer.push(maxXYZ[0], minXYZ[1], minXYZ[2]);
+      this.vBuffer.push(minXYZ[0], minXYZ[1], maxXYZ[2]);
+      this.vBuffer.push(minXYZ[0], maxXYZ[1], maxXYZ[2]);
+      this.vBuffer.push(minXYZ[0], maxXYZ[1], minXYZ[2]);
+      this.vBuffer.push(maxXYZ[0], minXYZ[1], maxXYZ[2]);
+
+      // console.log(this.vBuffer);
+
+      this.fBuffer.push(0, 2, 3);
+      this.fBuffer.push(0, 7, 3);
+      this.fBuffer.push(0, 2, 6);
+      this.fBuffer.push(0, 5, 6);
+      this.fBuffer.push(1, 2, 3);
+      this.fBuffer.push(1, 2, 6);
+      this.fBuffer.push(1, 5, 6);
+      this.fBuffer.push(1, 4, 5);
+      this.fBuffer.push(1, 4, 7);
+      this.fBuffer.push(1, 4, 3);
+      this.fBuffer.push(0, 4, 7);
+      this.fBuffer.push(0, 4, 5);
+
+      //----------------
+      console.log("TriMesh: Loaded ", this.numFaces, " triangles.");
+      console.log("TriMesh: Loaded ", this.numVertices, " vertices.");
+
+      this.generateNormals();
+      console.log("TriMesh: Generated normals");
+
+      this.generateLines();
+      console.log("TriMesh: Generated lines");
+
+      this.computeAABB();
+      console.log('AABB:');
+      console.log(this.minXYZ);
+      console.log(this.maxXYZ);
+
+      myMesh.loadBuffers();
+
+      this.isStatic = true;
+
     }
 
 
