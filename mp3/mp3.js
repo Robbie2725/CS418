@@ -72,33 +72,6 @@ var kEdgeWhite = [1.0,1.0,1.0];
 //Model parameters
 var eulerY=0;
 
-// cubemap image info TODO == move this somewhere else
-// const faceInfos = [
-//   {
-//     target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
-//     url: 'London/pos-x.jpg'
-//   },
-//   {
-//     target: gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
-//     url: 'London/neg-x.jpg'
-//   },
-//   {
-//     target: gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
-//     url: 'London/pos-y.jpg'
-//   },
-//   {
-//     target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
-//     url: 'London/neg-y.jpg'
-//   },
-//   {
-//     target: gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
-//     url: 'London/pos-z.jpg'
-//   },
-//   {
-//     target: gl.TEXTURE_CUBE_MAP_NEGATIVE_Z,
-//     url: 'London/neg-z.jpg'
-//   }
-// ];
 
 //-------------------------------------------------------------------------
 /**
@@ -442,7 +415,7 @@ function handleKeyUp(event) {
   gl.enable(gl.DEPTH_TEST);
   document.onkeydown = handleKeyDown;
   document.onkeyup = handleKeyUp;
-  // setupCubeMap(); // Sets up cubemap
+  setupCubeMap(); // Sets up cubemap
   tick();
 }
 

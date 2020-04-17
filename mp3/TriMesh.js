@@ -160,18 +160,18 @@ class TriMesh{
 
       // console.log(this.vBuffer);
 
-      this.fBuffer.push(0, 2, 3);
-      this.fBuffer.push(0, 7, 3);
-      this.fBuffer.push(0, 2, 6);
-      this.fBuffer.push(0, 5, 6);
-      this.fBuffer.push(1, 2, 3);
-      this.fBuffer.push(1, 2, 6);
-      this.fBuffer.push(1, 5, 6);
-      this.fBuffer.push(1, 4, 5);
-      this.fBuffer.push(1, 4, 7);
-      this.fBuffer.push(1, 4, 3);
-      this.fBuffer.push(0, 4, 7);
-      this.fBuffer.push(0, 4, 5);
+      this.fBuffer.push(0,3,2);
+      this.fBuffer.push(0,7,3);
+      this.fBuffer.push(0,5,4);
+      this.fBuffer.push(0,4,7);
+      this.fBuffer.push(1,5,6);
+      this.fBuffer.push(1,4,5);
+      this.fBuffer.push(1,6,2);
+      this.fBuffer.push(1,2,3);
+      this.fBuffer.push(0,2,6);
+      this.fBuffer.push(0,6,5);
+      this.fBuffer.push(1,7,4);
+      this.fBuffer.push(1,3,7);
 
       //----------------
       console.log("TriMesh: Loaded ", this.numFaces, " triangles.");
