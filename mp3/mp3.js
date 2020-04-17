@@ -34,7 +34,7 @@ var myMesh;
 
 // View parameters
 /** @global Location of the camera in world coordinates */
-var eyePt = vec3.fromValues(0.0,0.0,2.0);
+var eyePt = vec3.fromValues(0.0,0.0,1.5);
 /** @global Direction of the view in world coordinates */
 var viewDir = vec3.fromValues(0.0,0.0,-1.0);
 /** @global Up vector for view matrix creation, in world coordinates */
@@ -66,11 +66,12 @@ var kEdgeBlack = [0.0,0.0,0.0];
 /** @global Edge color for wireframe rendering */
 var kEdgeWhite = [1.0,1.0,1.0];
 
-/** @global Variable holding the texture */
-// var texture;
+/** @global variable for the skybox */
+var mySkyBox;
 
 //Model parameters
 var eulerY=0;
+var eulerX=0;
 
 
 //-------------------------------------------------------------------------
@@ -145,7 +146,7 @@ function mvPopMatrix() {
  */
 function setMatrixUniforms() {
     uploadModelViewMatrixToShader();
-    uploadNormalMatrixToShader();
+    // uploadNormalMatrixToShader();
     uploadProjectionMatrixToShader();
 }
 
@@ -251,20 +252,22 @@ function setupShaders() {
   shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
   gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-  shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
-  gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
+
+  // shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
+  // gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
 
   shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
   shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-  shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
-  shaderProgram.uniformLightPositionLoc = gl.getUniformLocation(shaderProgram, "uLightPosition");
-  shaderProgram.uniformAmbientLightColorLoc = gl.getUniformLocation(shaderProgram, "uAmbientLightColor");
-  shaderProgram.uniformDiffuseLightColorLoc = gl.getUniformLocation(shaderProgram, "uDiffuseLightColor");
-  shaderProgram.uniformSpecularLightColorLoc = gl.getUniformLocation(shaderProgram, "uSpecularLightColor");
-  shaderProgram.uniformShininessLoc = gl.getUniformLocation(shaderProgram, "uShininess");
-  shaderProgram.uniformAmbientMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKAmbient");
-  shaderProgram.uniformDiffuseMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKDiffuse");
-  shaderProgram.uniformSpecularMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKSpecular");
+  shaderProgram.texture = gl.getUniformLocation(shaderProgram, "uTexture");
+  // shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
+  // shaderProgram.uniformLightPositionLoc = gl.getUniformLocation(shaderProgram, "uLightPosition");
+  // shaderProgram.uniformAmbientLightColorLoc = gl.getUniformLocation(shaderProgram, "uAmbientLightColor");
+  // shaderProgram.uniformDiffuseLightColorLoc = gl.getUniformLocation(shaderProgram, "uDiffuseLightColor");
+  // shaderProgram.uniformSpecularLightColorLoc = gl.getUniformLocation(shaderProgram, "uSpecularLightColor");
+  // shaderProgram.uniformShininessLoc = gl.getUniformLocation(shaderProgram, "uShininess");
+  // shaderProgram.uniformAmbientMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKAmbient");
+  // shaderProgram.uniformDiffuseMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKDiffuse");
+  // shaderProgram.uniformSpecularMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKSpecular");
 }
 
 //-------------------------------------------------------------------------
@@ -339,30 +342,11 @@ function draw() {
     //ADD an if statement to prevent early drawing of myMesh
         mvPushMatrix();
         mat4.rotateY(mvMatrix, mvMatrix, degToRad(eulerY));
+        mat4.rotateX(mvMatrix, mvMatrix, degToRad(eulerX));
         mat4.multiply(mvMatrix,vMatrix,mvMatrix);
         setMatrixUniforms();
-        setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
-
-        if ((document.getElementById("polygon").checked) || (document.getElementById("wirepoly").checked))
-        {
-            setMaterialUniforms(shininess,kAmbient,
-                                kTerrainDiffuse,kSpecular);
-            myMesh.drawTriangles();
-        }
-
-        if(document.getElementById("wirepoly").checked)
-        {
-            setMaterialUniforms(shininess,kAmbient,
-                                kEdgeBlack,kSpecular);
-            myMesh.drawEdges();
-        }
-
-        if(document.getElementById("wireframe").checked)
-        {
-            setMaterialUniforms(shininess,kAmbient,
-                                kEdgeWhite,kSpecular);
-            myMesh.drawEdges();
-        }
+        mySkyBox.uploadCubeMap();
+        mySkyBox.drawTriangles();
         mvPopMatrix();
 
 
@@ -382,6 +366,13 @@ function handleKeyDown(event) {
             // key D
             eulerY+= 1;
         }
+        if (currentlyPressedKeys["s"]) {
+          // key A
+          eulerX-= 1;
+      } else if (currentlyPressedKeys["w"]) {
+          // key D
+          eulerX+= 1;
+      }
 
         if (currentlyPressedKeys["ArrowUp"]){
             // Up cursor key
@@ -408,13 +399,12 @@ function handleKeyUp(event) {
   canvas = document.getElementById("myGLCanvas");
   gl = createGLContext(canvas);
   setupShaders();
-  // setupMesh("cow.obj");
-  myMesh = new TriMesh();
-  myMesh.loadCube([0.5, 0.5, 0.5], [-.5,-.5,-.5]);
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
   document.onkeydown = handleKeyDown;
   document.onkeyup = handleKeyUp;
+  mySkyBox = new Skybox();
+  mySkyBox.loadBox([2,2,2], [-2,-2,-2]);
   setupCubeMap(); // Sets up cubemap
   tick();
 }
@@ -427,6 +417,7 @@ function handleKeyUp(event) {
 function animate() {
    //console.log(eulerX, " ", eulerY, " ", eulerZ);
    document.getElementById("eY").value=eulerY;
+   document.getElementById("eX").value=eulerX;
    document.getElementById("eZ").value=eyePt[2];
 }
 
@@ -438,5 +429,5 @@ function animate() {
 function tick() {
     requestAnimFrame(tick);
     animate();
-    if(myMesh.loaded() || myMesh.static()) draw();
+    draw();
 }
