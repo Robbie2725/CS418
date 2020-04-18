@@ -34,7 +34,7 @@ var myMesh;
 
 // View parameters
 /** @global Location of the camera in world coordinates */
-var eyePt = vec3.fromValues(0.0,0.0,2.0);
+var eyePt = vec3.fromValues(0.0,0.0,2);
 /** @global Direction of the view in world coordinates */
 var viewDir = vec3.fromValues(0.0,0.0,-1.0);
 /** @global Up vector for view matrix creation, in world coordinates */
@@ -335,7 +335,10 @@ function draw() {
 
     //Draw Mesh
     //ADD an if statement to prevent early drawing of myMesh
+    if(myMesh.loaded()){
         mvPushMatrix();
+        mat4.scale(mvMatrix, mvMatrix, vec3.fromValues(.25, .25, .25));
+        mat4.translate(mvMatrix, mvMatrix, vec3.fromValues(0, -2, -3));
         mat4.rotateY(mvMatrix, mvMatrix, degToRad(eulerY));
         mat4.multiply(mvMatrix,vMatrix,mvMatrix);
         setMatrixUniforms();
@@ -362,6 +365,7 @@ function draw() {
             myMesh.drawEdges();
         }
         mvPopMatrix();
+      }
 
 
 }
@@ -406,7 +410,9 @@ function handleKeyUp(event) {
   canvas = document.getElementById("myGLCanvas");
   gl = createGLContext(canvas);
   setupShaders();
-  setupMesh("cow.obj");
+  // setupMesh("teapot_0.obj");
+  // setupMesh("cow.obj");
+  setupMesh("https://raw.githubusercontent.com/illinois-cs418/cs418CourseMaterial/master/Meshes/teapot_0.obj");
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
   document.onkeydown = handleKeyDown;
@@ -433,5 +439,5 @@ function animate() {
 function tick() {
     requestAnimFrame(tick);
     animate();
-    if(myMesh.loaded()) draw();
+    draw();
 }

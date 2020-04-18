@@ -151,7 +151,7 @@ var texture;
 
    drawTriangles(){
      gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexPositionBuffer);
-     gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.VertexPositionBuffer.itemSize,
+     gl.vertexAttribPointer(skyShader.vertexPositionAttribute, this.VertexPositionBuffer.itemSize,
                       gl.FLOAT, false, 0, 0);
 
      //Draw
@@ -160,6 +160,6 @@ var texture;
    }
 
    uploadCubeMap(){
-     gl.uniform1i(shaderProgram.texture, 0);
+     gl.uniform1i(skyShader.texture, 0);
    }
  }

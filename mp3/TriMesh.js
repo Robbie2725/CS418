@@ -93,16 +93,17 @@ class TriMesh{
 
         //get all the vertices
         var vCount=0;
-        while(true) {
+        while(fileSplit[curLn][0]!='f') {
           if(fileSplit[curLn][0]!='v'){
             curLn++;
-            if(fileSplit[curLn][0]=='f') break;
             continue;
           }
-          var vSplit = fileSplit[curLn].split(' ');
-          this.setVertex(vCount, parseFloat(vSplit[1]), parseFloat(vSplit[2]), parseFloat(vSplit[3]))
+          if(fileSplit[curLn][0]=='v'){
+            var vSplit = fileSplit[curLn].split(/\s+/);
+            this.setVertex(vCount, parseFloat(vSplit[1]), parseFloat(vSplit[2]), parseFloat(vSplit[3]))
+            vCount++;
+          }
           curLn++;
-          vCount++;
         }
         this.numVertices = vCount;
 
@@ -113,10 +114,12 @@ class TriMesh{
             curLn++;
             continue;
           }
-          var fSplit = fileSplit[curLn].split(' ');
-          this.fBuffer.push(parseInt(fSplit[1])-1, parseInt(fSplit[2])-1, parseInt(fSplit[3])-1);
+          if(fileSplit[curLn][0]=='f'){
+            var fSplit = fileSplit[curLn].split(/\s+/);
+            this.fBuffer.push(parseInt(fSplit[1])-1, parseInt(fSplit[2])-1, parseInt(fSplit[3])-1);
+            fCount++;
+          }
           curLn++;
-          fCount++;
         }
         this.numFaces = fCount;
         //----------------
@@ -184,12 +187,12 @@ class TriMesh{
     */
     drawTriangles(){
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.VertexPositionBuffer.itemSize,
+        gl.vertexAttribPointer(teapotShader.vertexPositionAttribute, this.VertexPositionBuffer.itemSize,
                          gl.FLOAT, false, 0, 0);
 
         // Bind normal buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexNormalBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute,
+        gl.vertexAttribPointer(teapotShader.vertexNormalAttribute,
                            this.VertexNormalBuffer.itemSize,
                            gl.FLOAT, false, 0, 0);
 
@@ -204,12 +207,12 @@ class TriMesh{
     drawEdges(){
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexPositionBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, this.VertexPositionBuffer.itemSize,
+        gl.vertexAttribPointer(teapotShader.vertexPositionAttribute, this.VertexPositionBuffer.itemSize,
                          gl.FLOAT, false, 0, 0);
 
         // Bind normal buffer
         gl.bindBuffer(gl.ARRAY_BUFFER, this.VertexNormalBuffer);
-        gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute,
+        gl.vertexAttribPointer(teapotShader.vertexNormalAttribute,
                            this.VertexNormalBuffer.itemSize,
                            gl.FLOAT, false, 0, 0);
 

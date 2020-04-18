@@ -12,14 +12,9 @@
     uniform mat4 uMVMatrix;
     uniform mat4 uPMatrix;
 
-    varying vec4 vColor;
-
     varying vec3 vNormal;
 
     void main(void) {
-
-
-    vColor = vec4(1.0,1.0,1.0,1.0);
 
     gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
 
@@ -29,12 +24,40 @@
 
 <script id="shader-fs-skybox" type="x-shader/x-fragment">
 precision mediump float;
-varying vec4 vColor;
 varying vec3 vNormal;
 
 uniform samplerCube uTexture;
 void main(void) {
         gl_FragColor = textureCube(uTexture, normalize(vNormal));
+ }
+</script>
+
+<script id="shader-vs-teapot" type="x-shader/x-vertex">
+    attribute vec3 aVertexPosition;
+    attribute vec3 aVertexNormal;
+
+    uniform mat4 uMVMatrix;
+    uniform mat4 uPMatrix;
+
+    varying vec3 reflection;
+    void main(void) {
+
+    gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
+
+    vec4 eyePos = uMVMatrix*vec4(aVertexPosition, 1.0);
+    vec4 normal = uMVMatrix*vec4(aVertexNormal, 1.0);
+
+    reflection = reflect(eyePos.xyz, normal.xyz);
+    }
+</script>
+
+<script id="shader-fs-teapot" type="x-shader/x-fragment">
+precision mediump float;
+varying vec3 reflection;
+
+uniform samplerCube uTexture;
+void main(void) {
+        gl_FragColor = textureCube(uTexture, reflection);
  }
 </script>
 
