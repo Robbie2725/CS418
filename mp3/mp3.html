@@ -6,7 +6,7 @@
 </head>
 
 
-<script id="shader-vs" type="x-shader/x-vertex">
+<script id="shader-vs-skybox" type="x-shader/x-vertex">
     attribute vec3 aVertexPosition;
 
     uniform mat4 uMVMatrix;
@@ -27,7 +27,7 @@
     }
 </script>
 
-<script id="shader-fs" type="x-shader/x-fragment">
+<script id="shader-fs-skybox" type="x-shader/x-fragment">
 precision mediump float;
 varying vec4 vColor;
 varying vec3 vNormal;
@@ -56,7 +56,6 @@ void main(void) {
             <legend>Mesh Pose and Camera Position</legend>
          <emph>Euler Y:</emph> <input type="number" id="eY" value="0"> Keys A and D <br><br>
          <emph>Euler X:</emph> <input type="number" id="eX" value="0"> Keys W and S <br><br>
-         <emph>Eye Z position:</emph> <input type="number" id="eZ" value="0" > Keys ArrowUp and ArrowDown
         </fieldset>
         </form>
 </body>

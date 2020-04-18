@@ -34,7 +34,7 @@ var myMesh;
 
 // View parameters
 /** @global Location of the camera in world coordinates */
-var eyePt = vec3.fromValues(0.0,0.0,1.5);
+var eyePt = vec3.fromValues(0.0,0.0,0);
 /** @global Direction of the view in world coordinates */
 var viewDir = vec3.fromValues(0.0,0.0,-1.0);
 /** @global Up vector for view matrix creation, in world coordinates */
@@ -72,6 +72,9 @@ var mySkyBox;
 //Model parameters
 var eulerY=0;
 var eulerX=0;
+
+var xRot = quat.create();
+var yRot = quat.create();
 
 
 //-------------------------------------------------------------------------
@@ -230,13 +233,18 @@ function loadShaderFromDOM(id) {
   return shader;
 }
 
+function setupShaders() {
+  setupSkyShaders();
+  // setupTeapotShaders();
+}
+
 //----------------------------------------------------------------------------------
 /**
  * Setup the fragment and vertex shaders
  */
-function setupShaders() {
-  vertexShader = loadShaderFromDOM("shader-vs");
-  fragmentShader = loadShaderFromDOM("shader-fs");
+function setupSkyShaders() {
+  vertexShader = loadShaderFromDOM("shader-vs-skybox");
+  fragmentShader = loadShaderFromDOM("shader-fs-skybox");
 
   shaderProgram = gl.createProgram();
   gl.attachShader(shaderProgram, vertexShader);
@@ -338,11 +346,16 @@ function draw() {
     // Then generate the lookat matrix and initialize the view matrix to that view
     mat4.lookAt(vMatrix,eyePt,viewPt,up);
 
+    mat4.rotateX(vMatrix, vMatrix, degToRad(eulerX));
+    mat4.rotateY(vMatrix, vMatrix, degToRad(eulerY));
+
+
     //Draw Mesh
     //ADD an if statement to prevent early drawing of myMesh
         mvPushMatrix();
-        mat4.rotateY(mvMatrix, mvMatrix, degToRad(eulerY));
-        mat4.rotateX(mvMatrix, mvMatrix, degToRad(eulerX));
+        // mat4.rotateY(mvMatrix, mvMatrix, degToRad(eulerY));
+        // mat4.rotateX(mvMatrix, mvMatrix, degToRad(eulerX));
+
         mat4.multiply(mvMatrix,vMatrix,mvMatrix);
         setMatrixUniforms();
         mySkyBox.uploadCubeMap();
@@ -359,30 +372,16 @@ var currentlyPressedKeys = {};
 function handleKeyDown(event) {
         //console.log("Key down ", event.key, " code ", event.code);
         currentlyPressedKeys[event.key] = true;
-          if (currentlyPressedKeys["a"]) {
-            // key A
-            eulerY-= 1;
-        } else if (currentlyPressedKeys["d"]) {
-            // key D
-            eulerY+= 1;
-        }
-        if (currentlyPressedKeys["s"]) {
-          // key A
-          eulerX-= 1;
-      } else if (currentlyPressedKeys["w"]) {
-          // key D
-          eulerX+= 1;
-      }
 
-        if (currentlyPressedKeys["ArrowUp"]){
-            // Up cursor key
-            event.preventDefault();
-            eyePt[2]+= 0.01;
-        } else if (currentlyPressedKeys["ArrowDown"]){
-            event.preventDefault();
-            // Down cursor key
-            eyePt[2]-= 0.01;
-        }
+        // if (currentlyPressedKeys["ArrowUp"]){
+        //     // Up cursor key
+        //     event.preventDefault();
+        //     eyePt[2]+= 0.01;
+        // } else if (currentlyPressedKeys["ArrowDown"]){
+        //     event.preventDefault();
+        //     // Down cursor key
+        //     eyePt[2]-= 0.01;
+        // }
 
 }
 
@@ -404,8 +403,9 @@ function handleKeyUp(event) {
   document.onkeydown = handleKeyDown;
   document.onkeyup = handleKeyUp;
   mySkyBox = new Skybox();
-  mySkyBox.loadBox([2,2,2], [-2,-2,-2]);
+  mySkyBox.loadBox([5,5,5], [-5,-5,-5]);
   setupCubeMap(); // Sets up cubemap
+  setupMesh("teapot_0.obj");
   tick();
 }
 
@@ -415,10 +415,24 @@ function handleKeyUp(event) {
   * Update any model transformations
   */
 function animate() {
-   //console.log(eulerX, " ", eulerY, " ", eulerZ);
+   //console.log(eulerX, " ", eulerY, " ", eulerZ)
+   if (currentlyPressedKeys["a"]) {
+     // key A
+     eulerY-= 1;
+   } else if (currentlyPressedKeys["d"]) {
+       // key D
+       eulerY+= 1;
+   }
+   if (currentlyPressedKeys["w"]) {
+     // key W
+     eulerX-= 1;
+   } else if (currentlyPressedKeys["s"]) {
+     // key S
+     eulerX+= 1;
+   }
+
    document.getElementById("eY").value=eulerY;
    document.getElementById("eX").value=eulerX;
-   document.getElementById("eZ").value=eyePt[2];
 }
 
 
