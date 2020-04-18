@@ -74,7 +74,7 @@ var mySkyBox;
 
 //Model parameters
 var eulerY=0;
-var eulerX=0;
+var teapotY=0;
 
 
 //-------------------------------------------------------------------------
@@ -398,8 +398,9 @@ function draw() {
     if(myMesh.loaded()){
       mvPushMatrix();
       gl.useProgram(teapotShader);
+      mat4.rotateY(mvMatrix, mvMatrix, degToRad(teapotY));
       // mat4.scale(mvMatrix, mvMatrix, vec3.fromValues(.2, .2, .2));
-      mat4.translate(mvMatrix, mvMatrix, vec3.fromValues(0, -1, 0));
+      mat4.translate(mvMatrix, mvMatrix, vec3.fromValues(0, -5, 0));
       mat4.multiply(mvMatrix, vMatrix, mvMatrix);
       setMatrixUniforms("teapotShader");
       myMesh.drawTriangles();
@@ -457,16 +458,16 @@ function animate() {
        // key D
        eulerY+= 1;
    }
-   if (currentlyPressedKeys["w"]) {
+   if (currentlyPressedKeys["ArrowLeft"]) {
      // key W
-     eulerX-= 1;
-   } else if (currentlyPressedKeys["s"]) {
+     teapotY-= 1;
+   } else if (currentlyPressedKeys["ArrowRight"]) {
      // key S
-     eulerX+= 1;
+     teapotY+= 1;
    }
 
    document.getElementById("eY").value=eulerY;
-   document.getElementById("eX").value=eulerX;
+   document.getElementById("eX").value=teapotY;
 }
 
 
