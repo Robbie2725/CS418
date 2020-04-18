@@ -9,14 +9,15 @@
 <script id="shader-vs-skybox" type="x-shader/x-vertex">
     attribute vec3 aVertexPosition;
 
-    uniform mat4 uMVMatrix;
+    uniform mat4 uMMatrix;
+    uniform mat4 uVMatrix;
     uniform mat4 uPMatrix;
 
     varying vec3 vNormal;
 
     void main(void) {
 
-    gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
+    gl_Position = uPMatrix*uVMatrix*uMMatrix*vec4(aVertexPosition, 1.0);
 
     vNormal = normalize(aVertexPosition);
     }
@@ -36,27 +37,34 @@ void main(void) {
     attribute vec3 aVertexPosition;
     attribute vec3 aVertexNormal;
 
-    uniform mat4 uMVMatrix;
+    uniform mat4 uMMatrix;
+    uniform mat4 uVMatrix;
     uniform mat4 uPMatrix;
 
-    varying vec3 reflection;
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPosition;
     void main(void) {
 
-    gl_Position = uPMatrix*uMVMatrix*vec4(aVertexPosition, 1.0);
+    gl_Position = uPMatrix*uVMatrix*uMMatrix*vec4(aVertexPosition, 1.0);
 
-    vec4 eyePos = uMVMatrix*vec4(aVertexPosition, 1.0);
-    vec4 normal = uMVMatrix*vec4(aVertexNormal, 1.0);
+    vWorldPosition = mat3(uMMatrix)*aVertexPosition;
+    vWorldNormal = mat3(uMMatrix)*aVertexNormal;
 
-    reflection = reflect(eyePos.xyz, normal.xyz);
+    // reflection = reflect(eyePos.xyz, normal.xyz);
     }
 </script>
 
 <script id="shader-fs-teapot" type="x-shader/x-fragment">
 precision mediump float;
-varying vec3 reflection;
+varying vec3 vWorldNormal;
+varying vec3 vWorldPosition;
 
+uniform vec3 worldCameraPosition;
 uniform samplerCube uTexture;
 void main(void) {
+        vec3 worldNormal = normalize(vWorldNormal);
+        vec3 eyeToSurface = normalize(vWorldPosition-worldCameraPosition);
+        vec3 reflection = reflect(eyeToSurface, worldNormal);
         gl_FragColor = textureCube(uTexture, reflection);
  }
 </script>

@@ -138,6 +138,7 @@ class TriMesh{
         console.log(this.maxXYZ);
 
         myMesh.loadBuffers();
+        gl.uniform1i(teapotShader.texture, 0);
         this.isLoaded = true;
     }
 

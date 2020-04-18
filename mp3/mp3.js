@@ -19,6 +19,8 @@ var teapotShader;
 /** @global The Modelview matrix */
 var mvMatrix = mat4.create();
 
+var mMatrix = mat4.create();
+
 /** @global The View matrix */
 var vMatrix = mat4.create();
 
@@ -37,7 +39,7 @@ var myMesh;
 
 // View parameters
 /** @global Location of the camera in world coordinates */
-var eyePt = vec3.fromValues(0.0,0.0,20);
+var eyePt = vec3.fromValues(0.0,0.0,10);
 /** @global Direction of the view in world coordinates */
 var viewDir = vec3.fromValues(0.0,0.0,-1.0);
 /** @global Up vector for view matrix creation, in world coordinates */
@@ -100,10 +102,12 @@ function asyncGetFile(url) {
  */
 function uploadModelViewMatrixToShader(program) {
   if(program=="skyShader"){
-    gl.uniformMatrix4fv(skyShader.mvMatrixUniform, false, mvMatrix);
+    gl.uniformMatrix4fv(skyShader.mMatrixUniform, false, mMatrix);
+    gl.uniformMatrix4fv(skyShader.vMatrixUniform, false, vMatrix);
   }
   else if(program=="teapotShader"){
-    gl.uniformMatrix4fv(teapotShader.mvMatrixUniform, false, mvMatrix);
+    gl.uniformMatrix4fv(teapotShader.mMatrixUniform, false, mMatrix);
+    gl.uniformMatrix4fv(teapotShader.vMatrixUniform, false, vMatrix);
   }
 }
 
@@ -129,7 +133,7 @@ function uploadNormalMatrixToShader(program) {
   mat3.transpose(nMatrix,nMatrix);
   mat3.invert(nMatrix,nMatrix);
   if(program!="skyShader"){
-    gl.uniformMatrix3fv(teapotShader.nMatrixUniform, false, nMatrix);
+    // gl.uniformMatrix3fv(teapotShader.nMatrixUniform, false, nMatrix);
   }
 }
 
@@ -138,7 +142,7 @@ function uploadNormalMatrixToShader(program) {
  * Pushes matrix onto modelview matrix stack
  */
 function mvPushMatrix() {
-    var copy = mat4.clone(mvMatrix);
+    var copy = mat4.clone(mMatrix);
     mvMatrixStack.push(copy);
 }
 
@@ -151,7 +155,7 @@ function mvPopMatrix() {
     if (mvMatrixStack.length == 0) {
       throw "Invalid popMatrix!";
     }
-    mvMatrix = mvMatrixStack.pop();
+    mMatrix = mvMatrixStack.pop();
 }
 
 //----------------------------------------------------------------------------------
@@ -247,7 +251,7 @@ function loadShaderFromDOM(id) {
 
 function setupShaders() {
   setupSkyShaders();
-  // setupTeapotShaders();
+  setupTeapotShaders();
 }
 
 //----------------------------------------------------------------------------------
@@ -273,7 +277,8 @@ function setupSkyShaders() {
   gl.enableVertexAttribArray(skyShader.vertexPositionAttribute);
 
 
-  skyShader.mvMatrixUniform = gl.getUniformLocation(skyShader, "uMVMatrix");
+  skyShader.mMatrixUniform = gl.getUniformLocation(skyShader, "uMMatrix");
+  skyShader.vMatrixUniform = gl.getUniformLocation(skyShader, "uVMatrix");
   skyShader.pMatrixUniform = gl.getUniformLocation(skyShader, "uPMatrix");
   skyShader.texture = gl.getUniformLocation(skyShader, "uTexture");
 }
@@ -300,8 +305,10 @@ function setupTeapotShaders() {
   teapotShader.vertexNormalAttribute = gl.getAttribLocation(teapotShader, "aVertexNormal");
   gl.enableVertexAttribArray(teapotShader.vertexNormalAttribute);
 
-  teapotShader.mvMatrixUniform = gl.getUniformLocation(teapotShader, "uMVMatrix");
+  teapotShader.mMatrixUniform = gl.getUniformLocation(teapotShader, "uMMatrix");
+  teapotShader.vMatrixUniform = gl.getUniformLocation(teapotShader, "uVMatrix");
   teapotShader.pMatrixUniform = gl.getUniformLocation(teapotShader, "uPMatrix");
+  teapotShader.cameraPosUniform = gl.getUniformLocation(teapotShader, "worldCameraPosition");
   teapotShader.texture = gl.getUniformLocation(teapotShader, "uTexture");
   // shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
   // shaderProgram.uniformLightPositionLoc = gl.getUniformLocation(shaderProgram, "uLightPosition");
@@ -377,18 +384,16 @@ function draw() {
                      .1, 500.0);
 
     // We want to look down -z, so create a lookat point in that direction
+    eyePt = vec3.fromValues(10*Math.sin(degToRad(eulerY)), 0, 10*Math.cos(degToRad(eulerY)));
+    viewDir = vec3.fromValues(-Math.sin(degToRad(eulerY)), 0, -Math.cos(degToRad(eulerY)));
     vec3.add(viewPt, eyePt, viewDir);
-
 
     // Then generate the lookat matrix and initialize the view matrix to that view
     mat4.lookAt(vMatrix,eyePt,viewPt,up);
 
-    mat4.rotateY(vMatrix, vMatrix, degToRad(eulerY));
-
     // Draw skybox
     gl.useProgram(skyShader);
     mvPushMatrix();
-    mat4.multiply(mvMatrix,vMatrix,mvMatrix);
     setMatrixUniforms("skyShader");
     mySkyBox.uploadCubeMap();
     mySkyBox.drawTriangles();
@@ -398,10 +403,10 @@ function draw() {
     if(myMesh.loaded()){
       mvPushMatrix();
       gl.useProgram(teapotShader);
-      mat4.rotateY(mvMatrix, mvMatrix, degToRad(teapotY));
-      // mat4.scale(mvMatrix, mvMatrix, vec3.fromValues(.2, .2, .2));
-      mat4.translate(mvMatrix, mvMatrix, vec3.fromValues(0, -5, 0));
-      mat4.multiply(mvMatrix, vMatrix, mvMatrix);
+      mat4.rotateY(mMatrix, mMatrix, degToRad(teapotY));
+      mat4.translate(mMatrix, mMatrix, vec3.fromValues(0, -1, 0));
+      gl.uniform3fv(teapotShader.cameraPosUniform, eyePt);
+      gl.uniform1i(teapotShader.texture, 0);
       setMatrixUniforms("teapotShader");
       myMesh.drawTriangles();
       mvPopMatrix();
@@ -431,8 +436,7 @@ function handleKeyUp(event) {
  function startup() {
   canvas = document.getElementById("myGLCanvas");
   gl = createGLContext(canvas);
-  setupSkyShaders();
-  setupTeapotShaders();
+  setupShaders();
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
   document.onkeydown = handleKeyDown;
@@ -440,7 +444,8 @@ function handleKeyUp(event) {
   mySkyBox = new Skybox();
   mySkyBox.loadBox([100,100,100], [-100,-100,-100]);
   setupCubeMap(); // Sets up cubemap
-  setupMesh("teapot_0.obj");
+  mySkyBox.uploadCubeMap();
+  setupMesh("https://raw.githubusercontent.com/illinois-cs418/cs418CourseMaterial/master/Meshes/teapot_0.obj");
   tick();
 }
 
