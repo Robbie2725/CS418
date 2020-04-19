@@ -138,6 +138,7 @@ class TriMesh{
         console.log(this.maxXYZ);
 
         myMesh.loadBuffers();
+        // mark it as loaded so it will now draw
         this.isLoaded = true;
     }
 

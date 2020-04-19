@@ -17,8 +17,10 @@
 
     void main(void) {
 
+    // vertex position
     gl_Position = uPMatrix*uVMatrix*uMMatrix*vec4(aVertexPosition, 1.0);
 
+    // to index into the texture map, just use the cube corners
     vNormal = normalize(aVertexPosition);
     }
 </script>
@@ -29,6 +31,7 @@ varying vec3 vNormal;
 
 uniform samplerCube uTexture;
 void main(void) {
+        // index into the map based off the interpolated value from the vertex
         gl_FragColor = textureCube(uTexture, normalize(vNormal));
  }
 </script>
@@ -108,7 +111,7 @@ void main(void) {
         }
         else {
           //refract and get texture from map
-          vec3 refraction = refract(eyeToSurface, worldNormal, .9);
+          vec3 refraction = refract(eyeToSurface, worldNormal, .92);
             vec4 refractColor = textureCube(uTexture, refraction);
             // mix with white
             refractColor = mix(refractColor, vec4(1,1,1,1), 0.2);

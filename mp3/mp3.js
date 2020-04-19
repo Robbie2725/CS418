@@ -103,6 +103,7 @@ function asyncGetFile(url) {
 //-------------------------------------------------------------------------
 /**
  * Sends model and view matrices to shader (seperate uniforms)
+ * @param {String} program Name of shader program to upload to
  */
 function uploadModelViewMatrixToShader(program) {
   if(program=="skyShader"){
@@ -118,6 +119,7 @@ function uploadModelViewMatrixToShader(program) {
 //-------------------------------------------------------------------------
 /**
  * Sends projection matrix to shader
+ * @param {String} program Name of shader program to upload to
  */
 function uploadProjectionMatrixToShader(program) {
   if(program=="skyShader"){
@@ -131,11 +133,13 @@ function uploadProjectionMatrixToShader(program) {
 //-------------------------------------------------------------------------
 /**
  * Generates and sends the normal matrix to the shader
+ * @param {String} program Name of shader program to upload to
  */
 function uploadNormalMatrixToShader(program) {
   mat3.fromMat4(nMatrix,mMatrix);
   mat3.transpose(nMatrix,nMatrix);
   mat3.invert(nMatrix,nMatrix);
+  //skybox doesnt need the normal matrix
   if(program!="skyShader"){
     gl.uniformMatrix3fv(teapotShader.nMatrixUniform, false, nMatrix);
   }
@@ -165,6 +169,7 @@ function mPopMatrix() {
 //----------------------------------------------------------------------------------
 /**
  * Sends projection/modelview matrices to shader
+ * @param {String} program Name of shader program to upload to
  */
 function setMatrixUniforms(program) {
   uploadModelViewMatrixToShader(program);
@@ -260,7 +265,7 @@ function setupShaders() {
 
 //----------------------------------------------------------------------------------
 /**
- * Setup the fragment and vertex shaders
+ * Setup the fragment and vertex shaders for the skybox
  */
 function setupSkyShaders() {
   vertexShader = loadShaderFromDOM("shader-vs-skybox");
@@ -287,6 +292,10 @@ function setupSkyShaders() {
   skyShader.texture = gl.getUniformLocation(skyShader, "uTexture");
 }
 
+//----------------------------------------------------------------------------------
+/**
+ * Setup the fragment and vertex shaders for the teapot
+ */
 function setupTeapotShaders() {
   vertexShader = loadShaderFromDOM("shader-vs-teapot");
   fragmentShader = loadShaderFromDOM("shader-fs-teapot");
@@ -329,7 +338,7 @@ function setupTeapotShaders() {
 
 //-------------------------------------------------------------------------
 /**
- * Sends material information to the shader
+ * Sends material information to the teapot shader
  * @param {Float32} alpha shininess coefficient
  * @param {Float32Array} a Ambient material color
  * @param {Float32Array} d Diffuse material color
@@ -344,7 +353,7 @@ function setMaterialUniforms(alpha,a,d,s) {
 
 //-------------------------------------------------------------------------
 /**
- * Sends light information to the shader
+ * Sends light information to the teapot
  * @param {Float32Array} loc Location of light source
  * @param {Float32Array} a Ambient light strength
  * @param {Float32Array} d Diffuse light strength
@@ -359,7 +368,8 @@ function setLightUniforms(loc,a,d,s) {
 
 //----------------------------------------------------------------------------------
 /**
- * Populate buffers with data
+ * Loads a mesh from a given obj file
+ * @param {string} filename Loacation of the file
  */
 function setupMesh(filename) {
    myMesh = new TriMesh();
@@ -379,7 +389,6 @@ function setupMesh(filename) {
  * Draw call that applies matrix transformations to model and draws model in frame
  */
 function draw() {
-    //console.log("function draw()")
 
     gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -398,28 +407,43 @@ function draw() {
     mat4.lookAt(vMatrix,eyePt,viewPt,up);
 
     // Draw skybox
+    // use proper shader
     gl.useProgram(skyShader);
     mPushMatrix();
+    //send uniforms to shader
     setMatrixUniforms("skyShader");
+    // set the texture map
     gl.uniform1i(skyShader.texture, 0);
+    //draw the skybox
     mySkyBox.drawTriangles();
+    // reset model matrix
     mPopMatrix();
 
-    //Draw teapot
+    //Draw teapot if loaded
     if(myMesh.loaded()){
       mPushMatrix();
+      //use proper shader
       gl.useProgram(teapotShader);
+      //tell shader which method to use (reflect, refract, or normal)
       gl.uniform1i(teapotShader.selectVal, shaderSelect);
       gl.uniform1i(teapotShader.fSelectVal, shaderSelect);
+      // rotate based off user input
       mat4.rotateY(mMatrix, mMatrix, degToRad(teapotY));
+      // translate for better view
       mat4.translate(mMatrix, mMatrix, vec3.fromValues(0, -1.5, 0));
+      //send eyept so it can determine where camera is for reflection/refraction
       gl.uniform3fv(teapotShader.cameraPosUniform, eyePt);
+      // set the texture map
       gl.uniform1i(teapotShader.texture, 0);
+      // send uniforms to shader
       setMatrixUniforms("teapotShader");
+      // send light information to the shaders
       setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
       // send material information to shaders
       setMaterialUniforms(shininess,kAmbient,kTerrainDiffuse,kSpecular);
+      // draw the teapot
       myMesh.drawTriangles();
+      //reset the model matrix
       mPopMatrix();
     }
 
@@ -430,11 +454,17 @@ function draw() {
 //Code to handle user interaction
 var currentlyPressedKeys = {};
 
+/**
+ * handles if key is pressed, saves value to array
+ */
 function handleKeyDown(event) {
         //console.log("Key down ", event.key, " code ", event.code);
         currentlyPressedKeys[event.key] = true;
 }
 
+/**
+ * handles if key released, sets value in array to true
+ */
 function handleKeyUp(event) {
         //console.log("Key up ", event.key, " code ", event.code);
         currentlyPressedKeys[event.key] = false;
@@ -447,15 +477,19 @@ function handleKeyUp(event) {
  function startup() {
   canvas = document.getElementById("myGLCanvas");
   gl = createGLContext(canvas);
+  // setup skybox/teapot shaders
   setupShaders();
   gl.clearColor(0.0, 0.0, 0.0, 1.0);
   gl.enable(gl.DEPTH_TEST);
   document.onkeydown = handleKeyDown;
   document.onkeyup = handleKeyUp;
+  // create the skybox
   mySkyBox = new Skybox();
   mySkyBox.loadBox([100,100,100], [-100,-100,-100]);
-  setupCubeMap(); // Sets up cubemap
+  //setup the cubemap by loading images
+  setupCubeMap();
   mySkyBox.uploadCubeMap();
+  //load the teapot object
   setupMesh("https://raw.githubusercontent.com/illinois-cs418/cs418CourseMaterial/master/Meshes/teapot_0.obj");
   tick();
 }
@@ -467,6 +501,7 @@ function handleKeyUp(event) {
   */
 function animate() {
    //console.log(eulerX, " ", eulerY, " ", eulerZ)
+   // orbit the camera
    if (currentlyPressedKeys["a"]) {
      // key A
      eulerY-= 1;
@@ -474,6 +509,7 @@ function animate() {
        // key D
        eulerY+= 1;
    }
+   // rotate teapot
    if (currentlyPressedKeys["ArrowLeft"]) {
      // key W
      teapotY-= 1;
@@ -482,8 +518,11 @@ function animate() {
      teapotY+= 1;
    }
 
+   //update webpage
    document.getElementById("eY").value=eulerY;
    document.getElementById("eX").value=teapotY;
+
+   // determine which shading method to use for the teapot
    if(document.getElementById("refl").checked){
      shaderSelect = 0;
    }

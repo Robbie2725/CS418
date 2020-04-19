@@ -13,6 +13,7 @@ var texture;
    texture = gl.createTexture();
    gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture);
 
+   // each direction info
    const londonMap = [
       {
         target: gl.TEXTURE_CUBE_MAP_POSITIVE_X,
@@ -73,7 +74,11 @@ var texture;
 
  }
 
+/** Class implementing the skymap */
  class Skybox{
+   /**
+   * constructor allocates variables and checks if has extension
+   */
    constructor(){
      this.numFaces=0;
      this.numVertices=0;
@@ -97,9 +102,16 @@ var texture;
      }
    }
 
+   /**
+   * Sets up the box of size determined by the input parameters
+   * @param {Float32Array} maxXYZ 3 element array determining the max x,y,z coords
+   * @param {Float32Array} minXYZ 3 element array determining the min x,y,z coords
+   */
    loadBox(maxXYZ, minXYZ){
      this.numVertices = 8;
      this.numFaces = 12;
+
+     // push the vertices
      this.vBuffer.push(maxXYZ[0], maxXYZ[1], maxXYZ[2]);
      this.vBuffer.push(minXYZ[0], minXYZ[1], minXYZ[2]);
      this.vBuffer.push(maxXYZ[0], maxXYZ[1], minXYZ[2]);
@@ -109,8 +121,7 @@ var texture;
      this.vBuffer.push(minXYZ[0], maxXYZ[1], minXYZ[2]);
      this.vBuffer.push(maxXYZ[0], minXYZ[1], maxXYZ[2]);
 
-     // console.log(this.vBuffer);
-
+     // push the faces
      this.fBuffer.push(0,3,2);
      this.fBuffer.push(0,7,3);
      this.fBuffer.push(0,5,4);
@@ -127,6 +138,7 @@ var texture;
      console.log("Skybox: Loaded ", this.numFaces, " triangles.");
      console.log("Skybox: Loaded ", this.numVertices, " vertices.");
 
+     // update the buffers
      mySkyBox.loadBuffers();
    }
 
@@ -159,6 +171,7 @@ var texture;
      gl.drawElements(gl.TRIANGLES, this.IndexTriBuffer.numItems, gl.UNSIGNED_INT,0);
    }
 
+   // updates the shader with the cube map
    uploadCubeMap(){
      gl.uniform1i(skyShader.texture, 0);
    }
