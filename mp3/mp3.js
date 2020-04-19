@@ -19,6 +19,7 @@ var teapotShader;
 /** @global The Modelview matrix */
 var mvMatrix = mat4.create();
 
+/** @global The model (world) matrix */
 var mMatrix = mat4.create();
 
 /** @global The View matrix */
@@ -31,7 +32,7 @@ var pMatrix = mat4.create();
 var nMatrix = mat3.create();
 
 /** @global The matrix stack for hierarchical modeling */
-var mvMatrixStack = [];
+var mMatrixStack = [];
 
 /** @global An object holding the geometry for a 3D mesh */
 var myMesh;
@@ -51,7 +52,7 @@ var viewPt = vec3.fromValues(0.0,0.0,0.0);
 /** @global Light position in VIEW coordinates */
 var lightPosition = [1,1,1];
 /** @global Ambient light color/intensity for Phong reflection */
-var lAmbient = [0,0,0];
+var lAmbient = [.1,.1,.1];
 /** @global Diffuse light color/intensity for Phong reflection */
 var lDiffuse = [1,1,1];
 /** @global Specular light color/intensity for Phong reflection */
@@ -59,7 +60,7 @@ var lSpecular =[.5,.5,.5];
 
 //Material parameters
 /** @global Ambient material color/intensity for Phong reflection */
-var kAmbient = [1.0,1.0,1.0];
+var kAmbient = [205.0/255.0,163.0/255.0,63.0/255.0];
 /** @global Diffuse material color/intensity for Phong reflection */
 var kTerrainDiffuse = [205.0/255.0,163.0/255.0,63.0/255.0];
 /** @global Specular material color/intensity for Phong reflection */
@@ -74,11 +75,12 @@ var kEdgeWhite = [1.0,1.0,1.0];
 /** @global variable for the skybox */
 var mySkyBox;
 
-//Model parameters
-var eulerY=0;
-var teapotY=0;
-
+/** @global keeps track of shader to use */
 var shaderSelect=0;
+
+//Model parameters
+var eulerY=0; //camera orbit
+var teapotY=0; // teapot rotation
 
 
 //-------------------------------------------------------------------------
@@ -100,7 +102,7 @@ function asyncGetFile(url) {
 
 //-------------------------------------------------------------------------
 /**
- * Sends Modelview matrix to shader
+ * Sends model and view matrices to shader (seperate uniforms)
  */
 function uploadModelViewMatrixToShader(program) {
   if(program=="skyShader"){
@@ -131,7 +133,6 @@ function uploadProjectionMatrixToShader(program) {
  * Generates and sends the normal matrix to the shader
  */
 function uploadNormalMatrixToShader(program) {
-  mat4.multiply(mvMatrix, vMatrix, mMatrix);
   mat3.fromMat4(nMatrix,mMatrix);
   mat3.transpose(nMatrix,nMatrix);
   mat3.invert(nMatrix,nMatrix);
@@ -142,23 +143,23 @@ function uploadNormalMatrixToShader(program) {
 
 //----------------------------------------------------------------------------------
 /**
- * Pushes matrix onto modelview matrix stack
+ * Pushes matrix onto model matrix stack
  */
-function mvPushMatrix() {
+function mPushMatrix() {
     var copy = mat4.clone(mMatrix);
-    mvMatrixStack.push(copy);
+    mMatrixStack.push(copy);
 }
 
 
 //----------------------------------------------------------------------------------
 /**
- * Pops matrix off of modelview matrix stack
+ * Pops matrix off of model matrix stack
  */
-function mvPopMatrix() {
-    if (mvMatrixStack.length == 0) {
+function mPopMatrix() {
+    if (mMatrixStack.length == 0) {
       throw "Invalid popMatrix!";
     }
-    mMatrix = mvMatrixStack.pop();
+    mMatrix = mMatrixStack.pop();
 }
 
 //----------------------------------------------------------------------------------
@@ -398,15 +399,15 @@ function draw() {
 
     // Draw skybox
     gl.useProgram(skyShader);
-    mvPushMatrix();
+    mPushMatrix();
     setMatrixUniforms("skyShader");
     gl.uniform1i(skyShader.texture, 0);
     mySkyBox.drawTriangles();
-    mvPopMatrix();
+    mPopMatrix();
 
     //Draw teapot
     if(myMesh.loaded()){
-      mvPushMatrix();
+      mPushMatrix();
       gl.useProgram(teapotShader);
       gl.uniform1i(teapotShader.selectVal, shaderSelect);
       gl.uniform1i(teapotShader.fSelectVal, shaderSelect);
@@ -419,7 +420,7 @@ function draw() {
       // send material information to shaders
       setMaterialUniforms(shininess,kAmbient,kTerrainDiffuse,kSpecular);
       myMesh.drawTriangles();
-      mvPopMatrix();
+      mPopMatrix();
     }
 
 

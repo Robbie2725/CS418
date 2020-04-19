@@ -44,83 +44,50 @@ void main(void) {
     uniform mat4 uPMatrix;
     uniform mat3 uNMatrix;
 
-    uniform vec3 uLightPosition;
-    uniform vec3 uAmbientLightColor;
-    uniform vec3 uDiffuseLightColor;
-    uniform vec3 uSpecularLightColor;
-
-    uniform vec3 uKAmbient;
-    uniform vec3 uKDiffuse;
-    uniform vec3 uKSpecular;
-    uniform float uShininess;
-
-    varying vec4 vColor;
+    varying vec3 fragNormal;
+    varying vec3 vPositionEye;
 
     varying vec3 vWorldNormal;
     varying vec3 vWorldPosition;
     void main(void) {
 
+    // calculate the vertex position
     gl_Position = uPMatrix*uVMatrix*uMMatrix*vec4(aVertexPosition, 1.0);
     if(select==0 || select==1){
-
+      // get the position in world coordinates for frag shader
       vWorldPosition = mat3(uMMatrix)*aVertexPosition;
+      // get the normal in world coordinates for frag shader
       vWorldNormal = mat3(uMMatrix)*aVertexNormal;
     }
     else{
       // Get the vertex position in eye coordinates
-      vec4 vertexPositionEye4 = uVMatrix * uMMatrix * vec4(aVertexPosition, 1.0);
-      vec3 vertexPositionEye3 = vertexPositionEye4.xyz / vertexPositionEye4.w;
+      vec4 vertexPositionEye4 = uVMatrix*uMMatrix * vec4(aVertexPosition, 1.0);
+      vPositionEye = vertexPositionEye4.xyz / vertexPositionEye4.w;
 
-      // Calculate the vector (l) to the light source
-      vec3 lightEye=(vec4(uLightPosition,1)).xyz;
-      vec3 vectorToLightSource = normalize(lightEye - vertexPositionEye3);
-
-      // Transform the normal (n) to eye coordinates
-      vec3 normalEye = normalize(uNMatrix * aVertexNormal);
-
-      // Calculate n dot l for diffuse lighting
-      float diffuseLightWeightning = max(dot(normalEye,
-                                      vectorToLightSource), 0.0);
-
-      // Calculate the reflection vector (r) that is needed for specular light
-      vec3 reflectionVector = normalize(reflect(-vectorToLightSource,
-                                               normalEye));
-
-      // The camera in eye coordinates is located in the origin and is pointing
-      // along the negative z-axis. Calculate viewVector (v)
-      // in eye coordinates as:
-      // (0.0, 0.0, 0.0) - vertexPositionEye3
-      vec3 viewVectorEye = -normalize(vertexPositionEye3);
-
-      float rdotv = max(dot(reflectionVector, viewVectorEye), 0.0);
-
-      float specularLightWeightning = pow(rdotv, uShininess);
-
-      // Sum up all three reflection components and send to the fragment shader
-      vColor = vec4(((uAmbientLightColor*uKAmbient)
-                  + (uDiffuseLightColor*uKDiffuse) * diffuseLightWeightning
-                  + ((uSpecularLightColor*uKSpecular) * specularLightWeightning)),1.0);
+      //Transform the normal to eye coordinates, pass to frag shader
+      fragNormal = uNMatrix*aVertexNormal;
 
     }
-    // if(select==1){
-    //   gl_Position = uPMatrix*uVMatrix*uMMatrix*vec4(aVertexPosition, 1.0);
-    //   vWorldPosition = mat3(uMMatrix)*aVertexPosition;
-    //   vWorldNormal = mat3(uMMatrix)*aVertexNormal;
-    //   // vec4 eyePos = vec4(aVertexPosition, 1.0);
-    //   // vec4 normalT = uVMatrix*uMMatrix*vec4(aVertexNormal, 1.0);
-    //   // vec3 normal = normalize(normalT.xyz);
-    //   // refraction = refract(eyePos.xyz, normal, .5);
-    //
-    // }
-
-    // reflection = reflect(eyePos.xyz, normal.xyz);
     }
 </script>
 
 <script id="shader-fs-teapot" type="x-shader/x-fragment">
 precision mediump float;
 
-varying vec4 vColor;
+uniform vec3 uLightPosition;
+uniform vec3 uDiffuseLightColor;
+uniform vec3 uAmbientLightColor;
+uniform vec3 uSpecularLightColor;
+
+uniform vec3 uKAmbient;
+uniform float uShininess;
+uniform vec3 uKSpecular;
+uniform vec3 uKDiffuse;
+
+varying vec3 wNormal;
+varying vec3 wPosition;
+varying vec3 fragNormal;
+varying vec3 vPositionEye;
 
 varying vec3 vWorldNormal;
 varying vec3 vWorldPosition;
@@ -131,32 +98,55 @@ uniform vec3 worldCameraPosition;
 uniform samplerCube uTexture;
 void main(void) {
       if(fSelect==0 || fSelect==1){
+        // calculate and normalize the vectors for reflection/refraction
         vec3 worldNormal = normalize(vWorldNormal);
         vec3 eyeToSurface = normalize(vWorldPosition-worldCameraPosition);
         if(fSelect == 0){
+          //reflect and get texture from map
           vec3 reflection = reflect(eyeToSurface, worldNormal);
           gl_FragColor = textureCube(uTexture, reflection);
         }
         else {
-          vec3 refraction = refract(eyeToSurface, worldNormal, 1.0);
+          //refract and get texture from map
+          vec3 refraction = refract(eyeToSurface, worldNormal, .9);
             vec4 refractColor = textureCube(uTexture, refraction);
-            // refractColor = mix(refractColor, vec4(1,1,1,1), 0.3);
-
+            // mix with white
+            refractColor = mix(refractColor, vec4(1,1,1,1), 0.2);
             gl_FragColor = refractColor;
         }
       }
       else{
-        gl_FragColor = vColor;
+        // normalize normal vector from the vertex shader
+        vec3 normalVector = normalize(fragNormal);
+
+        // get the vector to the light source
+        vec3 lightVector = normalize(uLightPosition-vPositionEye);
+
+        // Calculate the ambient light component (ambient light color * reflectivity)
+        vec3 ka_ia = uKAmbient*uAmbientLightColor;
+
+        // Weight of the diffuse light component (Light vector dot Normal vector)
+        float LdotN = max(dot(lightVector, normalVector), 0.0); // Diffuse lighting weight
+
+        //Calculate the diffuse term, i.e. k_d * i_d
+        // Use the k_d passed in from the vertex shader
+        vec3 diffuseTerm = uKDiffuse*uDiffuseLightColor;
+
+
+        //Now need to calculate the specular term and its weight
+        float specWeight=0.0;
+        float HdotN=0.0;
+        vec3 specTerm = uKSpecular*uSpecularLightColor;
+        if(LdotN > 0.0){
+            vec3 viewVector = normalize(-vPositionEye); // get the view vector (0-eye position)
+            vec3 halfwayVector = normalize(viewVector+lightVector); //get the normalized halfway vector
+            HdotN = max(dot(halfwayVector, normalVector), 0.0); // Calculate specular weight (H dot N)
+            specWeight = pow(HdotN, uShininess); //raise to the shininess exponent
+        }
+
+        // Set the color to the sum of each component
+        gl_FragColor = vec4(ka_ia+(LdotN*diffuseTerm)+(specWeight*specTerm), 1);
       }
-      // if (fSelect==1){
-      //   vec3 worldNormal = normalize(vWorldNormal);
-      //   vec3 eyeToSurface = normalize(vWorldPosition-worldCameraPosition);
-      //   vec3 refraction = refract(eyeToSurface, worldNormal, 1.0);
-      //   vec4 refractColor = textureCube(uTexture, refraction);
-      //   refractColor = mix(refractColor, vec4(1,1,1,1), 0.3);
-      //
-      //   gl_FragColor = refractColor;
-      // }
  }
 </script>
 
@@ -172,7 +162,7 @@ void main(void) {
             <legend>Rendering Parameters</legend>
          <input type="radio" name="primitive" id="refl" value="wireframe" checked> Reflection
          <input type="radio" name="primitive" id="refr" id="polygon" value="polygon"> Refraction
-         <input type="radio" name="primitive" id="phong" value="wirepoly" > Normal (phong)
+         <input type="radio" name="primitive" id="phong" value="wirepoly" > Normal (blinn-phong)
         </fieldset>
         <fieldset>
             <legend>Mesh Pose and Camera Position</legend>
