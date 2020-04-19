@@ -49,13 +49,13 @@ var viewPt = vec3.fromValues(0.0,0.0,0.0);
 
 //Light parameters
 /** @global Light position in VIEW coordinates */
-var lightPosition = [0,5,5];
+var lightPosition = [1,1,1];
 /** @global Ambient light color/intensity for Phong reflection */
 var lAmbient = [0,0,0];
 /** @global Diffuse light color/intensity for Phong reflection */
 var lDiffuse = [1,1,1];
 /** @global Specular light color/intensity for Phong reflection */
-var lSpecular =[0,0,0];
+var lSpecular =[.5,.5,.5];
 
 //Material parameters
 /** @global Ambient material color/intensity for Phong reflection */
@@ -63,7 +63,7 @@ var kAmbient = [1.0,1.0,1.0];
 /** @global Diffuse material color/intensity for Phong reflection */
 var kTerrainDiffuse = [205.0/255.0,163.0/255.0,63.0/255.0];
 /** @global Specular material color/intensity for Phong reflection */
-var kSpecular = [0.0,0.0,0.0];
+var kSpecular = [.5,.5,.5];
 /** @global Shininess exponent for Phong reflection */
 var shininess = 23;
 /** @global Edge color fpr wireframeish rendering */
@@ -77,6 +77,8 @@ var mySkyBox;
 //Model parameters
 var eulerY=0;
 var teapotY=0;
+
+var shaderSelect=0;
 
 
 //-------------------------------------------------------------------------
@@ -129,11 +131,12 @@ function uploadProjectionMatrixToShader(program) {
  * Generates and sends the normal matrix to the shader
  */
 function uploadNormalMatrixToShader(program) {
-  mat3.fromMat4(nMatrix,mvMatrix);
+  mat4.multiply(mvMatrix, vMatrix, mMatrix);
+  mat3.fromMat4(nMatrix,mMatrix);
   mat3.transpose(nMatrix,nMatrix);
   mat3.invert(nMatrix,nMatrix);
   if(program!="skyShader"){
-    // gl.uniformMatrix3fv(teapotShader.nMatrixUniform, false, nMatrix);
+    gl.uniformMatrix3fv(teapotShader.nMatrixUniform, false, nMatrix);
   }
 }
 
@@ -309,16 +312,18 @@ function setupTeapotShaders() {
   teapotShader.vMatrixUniform = gl.getUniformLocation(teapotShader, "uVMatrix");
   teapotShader.pMatrixUniform = gl.getUniformLocation(teapotShader, "uPMatrix");
   teapotShader.cameraPosUniform = gl.getUniformLocation(teapotShader, "worldCameraPosition");
+  teapotShader.selectVal = gl.getUniformLocation(teapotShader, "select");
+  teapotShader.fSelectVal = gl.getUniformLocation(teapotShader, "fSelect");
   teapotShader.texture = gl.getUniformLocation(teapotShader, "uTexture");
-  // shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
-  // shaderProgram.uniformLightPositionLoc = gl.getUniformLocation(shaderProgram, "uLightPosition");
-  // shaderProgram.uniformAmbientLightColorLoc = gl.getUniformLocation(shaderProgram, "uAmbientLightColor");
-  // shaderProgram.uniformDiffuseLightColorLoc = gl.getUniformLocation(shaderProgram, "uDiffuseLightColor");
-  // shaderProgram.uniformSpecularLightColorLoc = gl.getUniformLocation(shaderProgram, "uSpecularLightColor");
-  // shaderProgram.uniformShininessLoc = gl.getUniformLocation(shaderProgram, "uShininess");
-  // shaderProgram.uniformAmbientMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKAmbient");
-  // shaderProgram.uniformDiffuseMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKDiffuse");
-  // shaderProgram.uniformSpecularMaterialColorLoc = gl.getUniformLocation(shaderProgram, "uKSpecular");
+  teapotShader.nMatrixUniform = gl.getUniformLocation(teapotShader, "uNMatrix");
+  teapotShader.uniformLightPositionLoc = gl.getUniformLocation(teapotShader, "uLightPosition");
+  teapotShader.uniformAmbientLightColorLoc = gl.getUniformLocation(teapotShader, "uAmbientLightColor");
+  teapotShader.uniformDiffuseLightColorLoc = gl.getUniformLocation(teapotShader, "uDiffuseLightColor");
+  teapotShader.uniformSpecularLightColorLoc = gl.getUniformLocation(teapotShader, "uSpecularLightColor");
+  teapotShader.uniformShininessLoc = gl.getUniformLocation(teapotShader, "uShininess");
+  teapotShader.uniformAmbientMaterialColorLoc = gl.getUniformLocation(teapotShader, "uKAmbient");
+  teapotShader.uniformDiffuseMaterialColorLoc = gl.getUniformLocation(teapotShader, "uKDiffuse");
+  teapotShader.uniformSpecularMaterialColorLoc = gl.getUniformLocation(teapotShader, "uKSpecular");
 }
 
 //-------------------------------------------------------------------------
@@ -330,10 +335,10 @@ function setupTeapotShaders() {
  * @param {Float32Array} s Specular material color
  */
 function setMaterialUniforms(alpha,a,d,s) {
-  gl.uniform1f(shaderProgram.uniformShininessLoc, alpha);
-  gl.uniform3fv(shaderProgram.uniformAmbientMaterialColorLoc, a);
-  gl.uniform3fv(shaderProgram.uniformDiffuseMaterialColorLoc, d);
-  gl.uniform3fv(shaderProgram.uniformSpecularMaterialColorLoc, s);
+  gl.uniform1f(teapotShader.uniformShininessLoc, alpha);
+  gl.uniform3fv(teapotShader.uniformAmbientMaterialColorLoc, a);
+  gl.uniform3fv(teapotShader.uniformDiffuseMaterialColorLoc, d);
+  gl.uniform3fv(teapotShader.uniformSpecularMaterialColorLoc, s);
 }
 
 //-------------------------------------------------------------------------
@@ -345,10 +350,10 @@ function setMaterialUniforms(alpha,a,d,s) {
  * @param {Float32Array} s Specular light strength
  */
 function setLightUniforms(loc,a,d,s) {
-  gl.uniform3fv(shaderProgram.uniformLightPositionLoc, loc);
-  gl.uniform3fv(shaderProgram.uniformAmbientLightColorLoc, a);
-  gl.uniform3fv(shaderProgram.uniformDiffuseLightColorLoc, d);
-  gl.uniform3fv(shaderProgram.uniformSpecularLightColorLoc, s);
+  gl.uniform3fv(teapotShader.uniformLightPositionLoc, loc);
+  gl.uniform3fv(teapotShader.uniformAmbientLightColorLoc, a);
+  gl.uniform3fv(teapotShader.uniformDiffuseLightColorLoc, d);
+  gl.uniform3fv(teapotShader.uniformSpecularLightColorLoc, s);
 }
 
 //----------------------------------------------------------------------------------
@@ -395,7 +400,7 @@ function draw() {
     gl.useProgram(skyShader);
     mvPushMatrix();
     setMatrixUniforms("skyShader");
-    mySkyBox.uploadCubeMap();
+    gl.uniform1i(skyShader.texture, 0);
     mySkyBox.drawTriangles();
     mvPopMatrix();
 
@@ -403,11 +408,16 @@ function draw() {
     if(myMesh.loaded()){
       mvPushMatrix();
       gl.useProgram(teapotShader);
+      gl.uniform1i(teapotShader.selectVal, shaderSelect);
+      gl.uniform1i(teapotShader.fSelectVal, shaderSelect);
       mat4.rotateY(mMatrix, mMatrix, degToRad(teapotY));
-      mat4.translate(mMatrix, mMatrix, vec3.fromValues(0, -1, 0));
+      mat4.translate(mMatrix, mMatrix, vec3.fromValues(0, -1.5, 0));
       gl.uniform3fv(teapotShader.cameraPosUniform, eyePt);
       gl.uniform1i(teapotShader.texture, 0);
       setMatrixUniforms("teapotShader");
+      setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
+      // send material information to shaders
+      setMaterialUniforms(shininess,kAmbient,kTerrainDiffuse,kSpecular);
       myMesh.drawTriangles();
       mvPopMatrix();
     }
@@ -473,6 +483,15 @@ function animate() {
 
    document.getElementById("eY").value=eulerY;
    document.getElementById("eX").value=teapotY;
+   if(document.getElementById("refl").checked){
+     shaderSelect = 0;
+   }
+   else if (document.getElementById("refr").checked){
+     shaderSelect = 1;
+   }
+   else {
+     shaderSelect = 2;
+   }
 }
 
 
