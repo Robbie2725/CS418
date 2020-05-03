@@ -80,10 +80,23 @@ var prevTime=0;
 var drag=.925;
 
 // variables for each sphere
-position=vec3.fromValues(.2,.2,.2);
-velocity=vec3.fromValues(1,0,0);
-size=vec3.fromValues(.1,.1,.1);
-color=[1,0,0];
+position=[
+  vec3.fromValues(.2,.2,.2),
+  vec3.fromValues(-2,2, 3)
+];
+velocity=[
+  vec3.fromValues(1,0,0),
+  vec3.fromValues(0,0,2)
+];
+
+size=[
+  vec3.fromValues(.1,.1,.1),
+  vec3.fromValues(.2,.2,.2)
+];
+color=[
+  [1,0,0],
+  [0,1,0]
+];
 
 //-------------------------------------------------------------------------
 /**
@@ -354,21 +367,24 @@ function draw() {
     // Then generate the lookat matrix and initialize the view matrix to that view
     mat4.lookAt(mvMatrix,eyePt,viewPt,up);
 
-    // Draw skybox
-    mvPushMatrix();
-    //send uniforms to shader
-    mat4.translate(mvMatrix, mvMatrix,position);
-    mat4.scale(mvMatrix, mvMatrix,size);
-    // send light information to the shaders
-    setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
-    // send material information to shaders
-    setMaterialUniforms(shininess,kAmbient,color,kSpecular);
+    // Draw each ball
+    var i;
+    for(i=0; i<position.length; i++){
+      mvPushMatrix();
+      //send uniforms to shader
+      mat4.translate(mvMatrix, mvMatrix,position[i]);
+      mat4.scale(mvMatrix, mvMatrix,size[i]);
+      // send light information to the shaders
+      setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
+      // send material information to shaders
+      setMaterialUniforms(shininess,kAmbient,color[i],kSpecular);
 
-    setMatrixUniforms();
-    //draw
-    drawSphere();
-    // reset model matrix
-    mvPopMatrix();
+      setMatrixUniforms();
+      //draw
+      drawSphere();
+      // reset model matrix
+      mvPopMatrix();
+    }
 
 }
 
@@ -455,15 +471,18 @@ function animate() {
    //get the drag
    var dragFactor = Math.pow(drag, .2);
 
-   //calculate the new position
-   vec3.scaleAndAdd(position, position, velocity, .2);
+   var i;
+   for(i=0; i<position.length; i++){
+     //calculate the new position
+     vec3.scaleAndAdd(position[i], position[i], velocity[i], .2);
 
-   // calculate the new velocity
-   var temp = vec3.create();
-   vec3.scale(temp, velocity, dragFactor);
-   vec3.scaleAndAdd(velocity, temp, gravity, tDelta);
-   checkCollision(position, velocity, size);
-   // console.log(velocity);
+     // calculate the new velocity
+     var temp = vec3.create();
+     vec3.scale(temp, velocity[i], dragFactor);
+     vec3.scaleAndAdd(velocity[i], temp, gravity, tDelta);
+     checkCollision(position[i], velocity[i], size[i]);
+     // console.log(velocity);
+   }
 }
 
 
