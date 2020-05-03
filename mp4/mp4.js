@@ -36,7 +36,7 @@ var sphereNBuffer;
 
 // View parameters
 /** @global Location of the camera in world coordinates */
-var eyePt = vec3.fromValues(0.0,0.0,3);
+var eyePt = vec3.fromValues(0.0,0.0,15);
 /** @global Direction of the view in world coordinates */
 var viewDir = vec3.fromValues(0.0,0.0,-1.0);
 /** @global Up vector for view matrix creation, in world coordinates */
@@ -70,6 +70,20 @@ var kEdgeWhite = [1.0,1.0,1.0];
 
 var numParticles=0;
 
+var boxMin=[-5,-5,-5];
+
+var boxMax=[5,5,5];
+
+//forces
+var gravity=[0,-.001,0]; // TODO == change
+var prevTime=0;
+var drag=.925;
+
+// variables for each sphere
+position=vec3.fromValues(.2,.2,.2);
+velocity=vec3.fromValues(1,0,0);
+size=vec3.fromValues(.1,.1,.1);
+color=[1,0,0];
 
 //-------------------------------------------------------------------------
 /**
@@ -343,12 +357,12 @@ function draw() {
     // Draw skybox
     mvPushMatrix();
     //send uniforms to shader
-    var transformVec = vec3.fromValues(.5,.5,.5);
-    mat4.scale(mvMatrix, mvMatrix,transformVec);
+    mat4.translate(mvMatrix, mvMatrix,position);
+    mat4.scale(mvMatrix, mvMatrix,size);
     // send light information to the shaders
     setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
     // send material information to shaders
-    setMaterialUniforms(shininess,kAmbient,kTerrainDiffuse,kSpecular);
+    setMaterialUniforms(shininess,kAmbient,color,kSpecular);
 
     setMatrixUniforms();
     //draw
@@ -402,7 +416,26 @@ function handleKeyUp(event) {
   gl.enable(gl.DEPTH_TEST);
   document.onkeydown = handleKeyDown;
   document.onkeyup = handleKeyUp;
+  prevTime = Date.now();
   tick();
+}
+
+function checkCollision(position, velocity, size){
+  //  if ball (position and radius) is outside of bounds, then flip the velocity and reflect
+  // the position
+
+  //check lower bounds of the box
+  var i;
+  for(i=0; i<3; i++){
+    if(position[i]-size[i]<boxMin[i]){
+      position[i]=position[i]+(boxMin[i]-(position[i]-size[i]))
+      velocity[i]=-velocity[i]*.8;
+    }
+    if(position[i]+size[i]>boxMax[i]){
+      position[i]=position[i]-(position[i]+size[i]-boxMax[i]);
+      velocity[i]=-velocity[i]*.8;
+    }
+  }
 }
 
 
@@ -412,7 +445,25 @@ function handleKeyUp(event) {
   */
 function animate() {
    //update webpage
-   document.getElementById("particleCount").value=numParticles
+   document.getElementById("particleCount").value=numParticles;
+
+   // calculate time difference to use in calculations
+   var curTime=Date.now();
+   var tDelta = curTime-prevTime;
+   prevTime=curTime;
+
+   //get the drag
+   var dragFactor = Math.pow(drag, .2);
+
+   //calculate the new position
+   vec3.scaleAndAdd(position, position, velocity, .2);
+
+   // calculate the new velocity
+   var temp = vec3.create();
+   vec3.scale(temp, velocity, dragFactor);
+   vec3.scaleAndAdd(velocity, temp, gravity, tDelta);
+   checkCollision(position, velocity, size);
+   // console.log(velocity);
 }
 
 
