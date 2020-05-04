@@ -89,12 +89,9 @@ void main(void) {
 <script src="sphereMesh.js"></script>
 <body onload="startup();">
  <canvas id="myGLCanvas" width="800" height="800"></canvas>
-    <form id="input_form">
-        <fieldset>
-            <legend>Number of Particles</legend>
-        <input type="number" id="particleCount" value="0"> Press Up to increase, Down to remove<br><br>
-        </fieldset>
-        </form>
+ <br>
+ <h3>Click button to add 50 spheres, press down to remove all</h3>
+    <button onclick="addNewSphere();">Add More </button>
 </body>
 
 </html>

@@ -1,3 +1,7 @@
+/**
+ * @file Lab 2 Code
+ * @author Eric Shaffer <shaffer1@illinois.edu>
+ */
 //-------------------------------------------------------------------------
 
 function pushVertex(v, vArray)

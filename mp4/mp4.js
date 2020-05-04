@@ -1,7 +1,7 @@
 
 /**
  * @file A simple WebGL example for viewing meshes read from OBJ files
- * @author Eric Shaffer <shaffer1@illinois.edu>
+ * @author Robbie Krokos <rkroko2@illinois.edu>
  */
 
 /** @global The WebGL context */
@@ -28,15 +28,16 @@ var nMatrix = mat3.create();
 /** @global The matrix stack for hierarchical modeling */
 var mvMatrixStack = [];
 
-/** @global An object holding the geometry for a 3D mesh */
+/** @global An array holding the Vertices of the sphere*/
 var sphereVBuffer;
 
+/** @global An array holding the normals to each vertex on the sphere */
 var sphereNBuffer;
 
 
 // View parameters
 /** @global Location of the camera in world coordinates */
-var eyePt = vec3.fromValues(0.0,0.0,15);
+var eyePt = vec3.fromValues(0.0,-2,15);
 /** @global Direction of the view in world coordinates */
 var viewDir = vec3.fromValues(0.0,0.0,-1.0);
 /** @global Up vector for view matrix creation, in world coordinates */
@@ -46,7 +47,7 @@ var viewPt = vec3.fromValues(0.0,0.0,0.0);
 
 //Light parameters
 /** @global Light position in VIEW coordinates */
-var lightPosition = [1,1,1];
+var lightPosition = [0,-5,12];
 /** @global Ambient light color/intensity for Phong reflection */
 var lAmbient = [0,0,0];
 /** @global Diffuse light color/intensity for Phong reflection */
@@ -68,35 +69,23 @@ var kEdgeBlack = [0.0,0.0,0.0];
 /** @global Edge color for wireframe rendering */
 var kEdgeWhite = [1.0,1.0,1.0];
 
-var numParticles=0;
-
+/** @global Stores the minimum bounds of the box the spheres are in */
 var boxMin=[-5,-5,-5];
 
+/** @global Stores the maximum bounds of the box the spheres are in */
 var boxMax=[5,5,5];
 
-//forces
-var gravity=[0,-.001,0]; // TODO == change
-var prevTime=0;
-var drag=.925;
+/** @globals Store the two forces acting on the spheres */
+// Gravity force
+var gravity=[0,-.001,0];
+// Drag force
+var drag=.975;
 
-// variables for each sphere
-position=[
-  vec3.fromValues(.2,.2,.2),
-  vec3.fromValues(-2,2, 3)
-];
-velocity=[
-  vec3.fromValues(1,0,0),
-  vec3.fromValues(0,0,2)
-];
-
-size=[
-  vec3.fromValues(.1,.1,.1),
-  vec3.fromValues(.2,.2,.2)
-];
-color=[
-  [1,0,0],
-  [0,1,0]
-];
+/** @globals Arrays of information for each sphere */
+position=[];
+velocity=[];
+size=[];
+color=[];
 
 //-------------------------------------------------------------------------
 /**
@@ -241,6 +230,9 @@ function loadShaderFromDOM(id) {
   return shader;
 }
 
+/**
+ * Sets up the shader program to be used
+ */
 function setupShaders() {
   vertexShader = loadShaderFromDOM("shader-vs");
   fragmentShader = loadShaderFromDOM("shader-fs");
@@ -306,7 +298,9 @@ function setLightUniforms(loc,a,d,s) {
   gl.uniform3fv(myShaderProgram.uniformSpecularLightColorLoc, s);
 }
 
-
+/**
+ * Sets the up the sphere mesh used to model each bouncing ball
+ */
 function setupBuffers(){
   var vBuffer=[];
   var nBuffer=[];
@@ -329,10 +323,29 @@ function setupBuffers(){
 
 }
 
+/**
+ * Adds 50 new random spheres when user clicks button
+ */
 function addNewSphere(){
-
+  console.log("More Spheres!");
+  var i;
+  // loop add 50 spheres
+  for(i=0; i<50; i++){
+    // x,y,z position between -4 aand 4
+    position.push(vec3.fromValues(Math.random()*8-4, Math.random()*8-4, Math.random()*8-4));
+    // x,z velocity between -1.5 and 1.5, y velocity between -.5 and .5
+    velocity.push(vec3.fromValues(Math.random()*3-1.5, Math.random()*1-.5, Math.random()*3-1.5));
+    // radius of each sphere betwen
+    sizeScale=Math.random()/2+.1;
+    size.push(vec3.fromValues(sizeScale, sizeScale, sizeScale));
+    // random r,g,b values
+    color.push(vec3.fromValues(Math.random(), Math.random(), Math.random()));
+  }
 }
 
+/**
+ * Draws a sphere to the screen
+ */
 function drawSphere(){
   gl.bindBuffer(gl.ARRAY_BUFFER, sphereVBuffer);
   gl.vertexAttribPointer(myShaderProgram.vertexPositionAttribute, sphereVBuffer.itemSize,
@@ -367,18 +380,20 @@ function draw() {
     // Then generate the lookat matrix and initialize the view matrix to that view
     mat4.lookAt(mvMatrix,eyePt,viewPt,up);
 
-    // Draw each ball
+    // Loop through each sphere in the array and draw it based on position
     var i;
     for(i=0; i<position.length; i++){
+      // save current model view matrix
       mvPushMatrix();
-      //send uniforms to shader
+      // move it to position
       mat4.translate(mvMatrix, mvMatrix,position[i]);
+      // scale it to the proper radius
       mat4.scale(mvMatrix, mvMatrix,size[i]);
       // send light information to the shaders
       setLightUniforms(lightPosition,lAmbient,lDiffuse,lSpecular);
       // send material information to shaders
       setMaterialUniforms(shininess,kAmbient,color[i],kSpecular);
-
+      // set the matrix uniforms
       setMatrixUniforms();
       //draw
       drawSphere();
@@ -398,17 +413,6 @@ var currentlyPressedKeys = {};
 function handleKeyDown(event) {
         //console.log("Key down ", event.key, " code ", event.code);
         currentlyPressedKeys[event.key] = true;
-
-        // Handle creation/deletion of new particles based on arrow up/down
-         if (currentlyPressedKeys["ArrowUp"]) {
-           // increase particles
-           numParticles+=1;
-           // addNewSphere();
-         }
-         // delete all particles
-         else if (currentlyPressedKeys["ArrowDown"]) {
-           numParticles=0;
-         }
 }
 
 /**
@@ -440,16 +444,19 @@ function checkCollision(position, velocity, size){
   //  if ball (position and radius) is outside of bounds, then flip the velocity and reflect
   // the position
 
-  //check lower bounds of the box
   var i;
   for(i=0; i<3; i++){
+    //check negative bounds of the box
     if(position[i]-size[i]<boxMin[i]){
+      //reflect
       position[i]=position[i]+(boxMin[i]-(position[i]-size[i]))
-      velocity[i]=-velocity[i]*.8;
+      velocity[i]=-velocity[i]*.7; // add some loss of momentum due to collision
     }
+    // check positive bounds of the box
     if(position[i]+size[i]>boxMax[i]){
+      // reflect
       position[i]=position[i]-(position[i]+size[i]-boxMax[i]);
-      velocity[i]=-velocity[i]*.8;
+      velocity[i]=-velocity[i]*.7; // add some loss of momentum due to collision
     }
   }
 }
@@ -460,8 +467,14 @@ function checkCollision(position, velocity, size){
   * Update any model transformations
   */
 function animate() {
-   //update webpage
-   document.getElementById("particleCount").value=numParticles;
+   // If down is pressed, remove all spheres
+   if(currentlyPressedKeys["ArrowDown"]){
+     //get rid of all sphere values stored in arrays
+     color=[];
+     position=[];
+     velocity=[];
+     size=[];
+   }
 
    // calculate time difference to use in calculations
    var curTime=Date.now();
@@ -469,19 +482,18 @@ function animate() {
    prevTime=curTime;
 
    //get the drag
-   var dragFactor = Math.pow(drag, .2);
+   var dragFactor = Math.pow(drag, .15);
 
    var i;
    for(i=0; i<position.length; i++){
      //calculate the new position
-     vec3.scaleAndAdd(position[i], position[i], velocity[i], .2);
+     vec3.scaleAndAdd(position[i], position[i], velocity[i], .15);
 
      // calculate the new velocity
      var temp = vec3.create();
      vec3.scale(temp, velocity[i], dragFactor);
      vec3.scaleAndAdd(velocity[i], temp, gravity, tDelta);
      checkCollision(position[i], velocity[i], size[i]);
-     // console.log(velocity);
    }
 }
 
